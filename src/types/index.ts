@@ -80,10 +80,12 @@ export interface Quiz {
 export interface QuizQuestion {
   id: string
   question: string
+  category?: "experience" | "learning_style" | "goal"
   options: string[]
   correctAnswer: number
   explanation: string
   culturalContext?: string
+  weight?: number
 }
 
 export interface QuizAttempt {

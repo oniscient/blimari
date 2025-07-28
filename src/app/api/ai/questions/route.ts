@@ -14,11 +14,13 @@ const QuestionsSchema = z.object({
       id: z.number(),
       question: z.string(),
       description: z.string(),
+      category: z.enum(["experience", "learning_style", "goal"]),
       options: z.array(
         z.object({
           id: z.string(),
           text: z.string(),
           description: z.string(),
+          weight: z.number().min(1).max(5),
         }),
       ),
     }),
@@ -46,87 +48,60 @@ export async function POST(request: NextRequest) {
       prompt: `
 Você é um especialista em educação e personalização de aprendizado. Um usuário quer aprender sobre "${topic}".
 
-Gere EXATAMENTE 3 perguntas para personalizar a experiência de aprendizado dele. Cada pergunta deve ter EXATAMENTE 3 opções de resposta.
+Crie EXATAMENTE 3 perguntas estratégicas para personalizar completamente a trilha de aprendizado sobre "${topic}".
 
-As perguntas devem descobrir:
-1. Nível de experiência/conhecimento prévio
-2. Estilo de aprendizado preferido  
-3. Objetivo/aplicação prática
+ESTRUTURA OBRIGATÓRIA:
 
-REGRAS IMPORTANTES:
-- Seja específico para o tópico "${topic}"
-- Perguntas claras e diretas
-- Opções distintas e relevantes
-- Linguagem em português brasileiro
-- Foque na personalização da trilha de aprendizado
+**PERGUNTA 1 - EXPERIÊNCIA** (category: "experience")
+- Descobrir o nível atual de conhecimento sobre "${topic}"
+- 3 opções: Iniciante, Intermediário, Avançado
+- Cada opção deve ter weight de 1 a 5 (1=iniciante, 5=expert)
 
-Formato JSON obrigatório:
+**PERGUNTA 2 - ESTILO DE APRENDIZADO** (category: "learning_style")
+- Identificar como a pessoa aprende melhor
+- 3 opções: Visual/Prático, Teórico/Conceitual, Hands-on/Projetos
+- Weight baseado na intensidade do estilo (1-5)
+
+**PERGUNTA 3 - OBJETIVO** (category: "goal")
+- Entender a motivação e aplicação do conhecimento
+- 3 opções: Carreira/Profissional, Interesse Pessoal, Acadêmico/Certificação
+- Weight baseado na urgência/intensidade do objetivo (1-5)
+
+REGRAS CRÍTICAS:
+1. Seja ESPECÍFICO para "${topic}" - não genérico
+2. Perguntas diretas e envolventes
+3. Opções bem distintas e relevantes
+4. Descrições claras e motivadoras
+5. Português brasileiro natural
+6. Foque na PERSONALIZAÇÃO da trilha
+
+EXEMPLO DE ESTRUTURA:
 {
   "topic": "${topic}",
   "questions": [
     {
       "id": 1,
-      "question": "Pergunta sobre nível de experiência",
-      "description": "Explicação breve do porquê desta pergunta",
+      "question": "Qual é sua experiência atual com ${topic}?",
+      "description": "Isso nos ajuda a calibrar o nível de complexidade do conteúdo",
+      "category": "experience",
       "options": [
         {
           "id": "beginner",
-          "text": "Opção para iniciantes",
-          "description": "Descrição da opção"
+          "text": "Nunca trabalhei com isso",
+          "description": "Vou começar do zero, preciso dos fundamentos",
+          "weight": 1
         },
         {
-          "id": "intermediate", 
-          "text": "Opção para intermediários",
-          "description": "Descrição da opção"
+          "id": "intermediate",
+          "text": "Tenho alguma experiência",
+          "description": "Já vi sobre o assunto, mas quero aprofundar",
+          "weight": 3
         },
         {
           "id": "advanced",
-          "text": "Opção para avançados", 
-          "description": "Descrição da opção"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "question": "Pergunta sobre estilo de aprendizado",
-      "description": "Explicação breve",
-      "options": [
-        {
-          "id": "visual",
-          "text": "Opção visual/prática",
-          "description": "Descrição"
-        },
-        {
-          "id": "theoretical",
-          "text": "Opção teórica/conceitual", 
-          "description": "Descrição"
-        },
-        {
-          "id": "hands_on",
-          "text": "Opção prática/projetos",
-          "description": "Descrição"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "question": "Pergunta sobre objetivo/aplicação",
-      "description": "Explicação breve",
-      "options": [
-        {
-          "id": "career",
-          "text": "Opção focada em carreira",
-          "description": "Descrição"
-        },
-        {
-          "id": "personal",
-          "text": "Opção para interesse pessoal",
-          "description": "Descrição"
-        },
-        {
-          "id": "academic",
-          "text": "Opção acadêmica/certificação",
-          "description": "Descrição"
+          "text": "Já trabalho com isso",
+          "description": "Quero me especializar e dominar técnicas avançadas",
+          "weight": 5
         }
       ]
     }
