@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { google } from "@ai-sdk/google"
 import { generateObject } from "ai"
 import { z } from "zod"
-import type { APIResponse } from "@/types"
+import type { APIResponse } from "@/src/types"
 
 const model = google("gemini-2.5-flash-lite")
 
