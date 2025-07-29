@@ -4,9 +4,9 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Blimari - Plataforma de Aprendizado com IA',
+  description: 'Transforme qualquer objetivo de aprendizado em uma trilha estruturada e personalizada em minutos com a Blimari, sua plataforma de aprendizado nativa de IA.',
+  generator: 'Blimari Platform',
 }
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.className} ${GeistMono.className}`}>
+    <html lang="en" className={`${GeistSans.className} ${GeomoMono.className}`}>
       <body>{children}</body>
     </html>
   )
