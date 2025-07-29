@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ArrowRight, CheckCircle, Sparkles, Target, BookOpen, Zap } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion";
+import Loader from "@/components/ui/loading";
 
 interface Question {
   id: number
@@ -136,16 +137,14 @@ export default function QuestionsPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-[#FF6B35] border-t-transparent rounded-full mx-auto mb-6"
-          />
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2">Gerando perguntas personalizadas</h2>
+          <div className="flex justify-center">
+            <Loader />
+          </div>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2 mt-8">Gerando perguntas personalizadas</h2>
           <p className="text-[#718096]">Analisando <strong>"{topic}"</strong> para criar a melhor experiência...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
