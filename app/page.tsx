@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Search, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { MobileMenu } from "@/components/layout/mobile-menu"
+import { MobileMenu } from "@/src/components/layout/mobile-menu"
 
 export default function HomePage() {
   const [learningGoal, setLearningGoal] = useState("")
