@@ -1,22 +1,24 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'Blimari - Plataforma de Aprendizado com IA',
-  description: 'Transforme qualquer objetivo de aprendizado em uma trilha estruturada e personalizada em minutos com a Blimari, sua plataforma de aprendizado nativa de IA.',
-  generator: 'Blimari Platform',
+  title: "Blimari - AI-Powered Learning Platform",
+  description: "Transform any learning goal into a structured, personalized path in minutes",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en" className={`${GeistSans.className} ${GeistMono.className}`}>
-      <body>{children}</body>
+    <html lang="pt-BR" className={inter.className}>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   )
 }

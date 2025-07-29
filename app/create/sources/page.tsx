@@ -1,14 +1,33 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Sparkles, BookOpen, Target, Youtube, Newspaper, Github, Globe } from "lucide-react"
+import { motion } from "framer-motion"
+import {
+  Youtube,
+  Github,
+  Globe,
+  BookOpen,
+  FileText,
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  Brain,
+  Target,
+  Lightbulb,
+} from "lucide-react"
+
+interface Source {
+  id: string
+  name: string
+  description: string
+  icon: React.ReactNode
+  color: string
+  bgColor: string
+  borderColor: string
+}
 
 interface Insight {
   experience: string
@@ -16,14 +35,62 @@ interface Insight {
   goal: string
 }
 
+const sources: Source[] = [
+  {
+    id: "youtube",
+    name: "YouTube",
+    description: "Vídeos tutoriais e cursos práticos",
+    icon: <Youtube className="w-6 h-6" />,
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200 hover:border-red-300",
+  },
+  {
+    id: "github",
+    name: "GitHub",
+    description: "Repositórios e projetos open source",
+    icon: <Github className="w-6 h-6" />,
+    color: "text-gray-800",
+    bgColor: "bg-gray-50",
+    borderColor: "border-gray-200 hover:border-gray-300",
+  },
+  {
+    id: "web",
+    name: "Web Articles",
+    description: "Artigos e blogs especializados",
+    icon: <Globe className="w-6 h-6" />,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200 hover:border-blue-300",
+  },
+  {
+    id: "medium",
+    name: "Medium",
+    description: "Artigos de desenvolvedores e especialistas",
+    icon: <FileText className="w-6 h-6" />,
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200 hover:border-green-300",
+  },
+  {
+    id: "books",
+    name: "Books & Docs",
+    description: "Documentações oficiais e livros técnicos",
+    icon: <BookOpen className="w-6 h-6" />,
+    color: "text-amber-600",
+    bgColor: "bg-amber-50",
+    borderColor: "border-amber-200 hover:border-amber-300",
+  },
+]
+
 export default function SourcesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [topic, setTopic] = useState<string>("")
   const [answers, setAnswers] = useState<string[]>([])
+  const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [insights, setInsights] = useState<Insight | null>(null)
-  const [loadingInsights, setLoadingInsights] = useState(true)
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false)
 
   useEffect(() => {
     const topicParam = searchParams.get("topic")
@@ -32,177 +99,266 @@ export default function SourcesPage() {
     if (topicParam) {
       setTopic(topicParam)
     }
+
     if (answersParam) {
       try {
         const parsedAnswers = JSON.parse(answersParam)
-        // Convert answers object to array
-        const answersArray = Object.values(parsedAnswers) as string[]
-        setAnswers(answersArray)
+        const answersArray = Array.isArray(parsedAnswers) ? parsedAnswers : Object.values(parsedAnswers)
+
+        // Only update if different to avoid infinite loops
+        if (JSON.stringify(answersArray) !== JSON.stringify(answers)) {
+          setAnswers(answersArray)
+        }
       } catch (error) {
         console.error("Error parsing answers:", error)
-        setAnswers([])
       }
     }
-  }, [searchParams])
+  }, [searchParams]) // Remove answers from dependencies
 
   useEffect(() => {
-    if (answers.length > 0 && topic) {
+    if (answers.length > 0 && !insights && !isLoadingInsights) {
       generateInsights()
     }
-  }, [answers, topic])
-
-  const handleSourceChange = (source: string, checked: boolean) => {
-    if (checked) {
-      setSelectedSources((prev) => [...prev, source])
-    } else {
-      setSelectedSources((prev) => prev.filter((s) => s !== source))
-    }
-  }
+  }, [answers, insights, isLoadingInsights])
 
   const generateInsights = async () => {
-    setLoadingInsights(true)
+    if (isLoadingInsights) return
+
+    setIsLoadingInsights(true)
     try {
       const response = await fetch("/api/ai/insights", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ answers, topic }),
+        body: JSON.stringify({
+          topic,
+          answers,
+        }),
       })
 
-      const data = await response.json()
-
-      if (data.success && data.insights) {
-        setInsights(data.insights)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.insights) {
+          setInsights(data.insights)
+        } else {
+          // Fallback insights
+          setInsights({
+            experience: "Perfil de aprendizado em análise",
+            style: "Preferências sendo processadas",
+            goal: "Objetivos sendo definidos",
+          })
+        }
       } else {
-        console.error("Failed to fetch insights:", data.error)
-        // Fallback insights
         setInsights({
-          experience: "Nível de experiência em análise.",
-          style: "Estilo de aprendizado sendo processado.",
-          goal: "Objetivo principal da jornada em definição.",
+          experience: "Não foi possível gerar insights de experiência",
+          style: "Não foi possível gerar insights de estilo",
+          goal: "Não foi possível gerar insights de objetivo",
         })
       }
     } catch (error) {
       console.error("Error generating insights:", error)
-      // Fallback insights on network error
       setInsights({
-        experience: "Não foi possível gerar insights de experiência.",
-        style: "Não foi possível gerar insights de estilo.",
-        goal: "Não foi possível gerar insights de objetivo.",
+        experience: "Erro ao gerar insights de experiência",
+        style: "Erro ao gerar insights de estilo",
+        goal: "Erro ao gerar insights de objetivo",
       })
     } finally {
-      setLoadingInsights(false)
+      setIsLoadingInsights(false)
     }
   }
 
-  const handleNext = () => {
-    const params = new URLSearchParams()
-    params.set("topic", topic)
-    params.set("answers", JSON.stringify(answers))
-    params.set("sources", JSON.stringify(selectedSources))
+  const toggleSource = (sourceId: string) => {
+    setSelectedSources((prev) => (prev.includes(sourceId) ? prev.filter((id) => id !== sourceId) : [...prev, sourceId]))
+  }
+
+  const handleContinue = () => {
+    if (selectedSources.length === 0) return
+
+    const params = new URLSearchParams({
+      topic,
+      answers: JSON.stringify(answers),
+      sources: JSON.stringify(selectedSources),
+    })
+
     router.push(`/create/processing?${params.toString()}`)
   }
 
-  const sourceOptions = [
-    { id: "youtube", name: "YouTube", icon: <Youtube className="h-5 w-5 text-red-500" /> },
-    { id: "medium", name: "Medium Articles", icon: <Newspaper className="h-5 w-5 text-gray-700" /> },
-    { id: "github", name: "GitHub Repos", icon: <Github className="h-5 w-5 text-gray-800" /> },
-    { id: "web", name: "Web Articles", icon: <Globe className="h-5 w-5 text-blue-500" /> },
-    { id: "books", name: "Books", icon: <BookOpen className="h-5 w-5 text-amber-700" /> },
-  ]
+  const handleBack = () => {
+    const params = new URLSearchParams({
+      topic,
+    })
+    router.push(`/create/questions?${params.toString()}`)
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#E0F2F7] to-[#B3E0F2] p-4 sm:p-6 lg:p-8">
-      <Progress value={66} className="w-full max-w-md mx-auto mb-8" />
+    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50/30 to-white">
+      {/* Header */}
+      <header className="px-6 py-6 border-b border-[#F1F5F9]/50 backdrop-blur-sm bg-white/80">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[#2D3748]">Escolha suas fontes de conteúdo</h1>
+              <p className="text-[#718096] mt-1">
+                Selecione onde você prefere aprender sobre <strong>{topic}</strong>
+              </p>
+            </div>
+            <div className="text-sm text-[#718096] bg-white px-3 py-1 rounded-full border border-[#E2E8F0]">
+              Passo 2 de 3
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto">
-        <Card className="w-full max-w-2xl p-6 sm:p-8 rounded-3xl shadow-xl">
-          <CardHeader className="text-center mb-6">
-            <CardTitle className="text-3xl font-extrabold text-[#2D3748]">Escolha suas fontes de aprendizado</CardTitle>
-            <p className="text-lg text-[#4A5568] mt-2">
-              De onde você prefere aprender sobre <span className="font-semibold">{topic}</span>?
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              {sourceOptions.map((source) => (
-                <div
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-6 py-16">
+        <div className="grid lg:grid-cols-3 gap-12">
+          {/* Sources Selection */}
+          <div className="lg:col-span-2">
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-[#2D3748] mb-2">Fontes de Conteúdo</h2>
+              <p className="text-[#718096]">
+                Selecione pelo menos uma fonte. Recomendamos escolher 2-3 para uma trilha mais rica.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sources.map((source) => (
+                <motion.div
                   key={source.id}
-                  className="flex items-center space-x-3 p-4 border border-[#CBD5E0] rounded-xl bg-white shadow-sm transition-all hover:shadow-md"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                    selectedSources.includes(source.id)
+                      ? `${source.borderColor.replace("hover:", "")} ${source.bgColor} shadow-lg`
+                      : `border-[#E2E8F0] bg-white hover:border-[#CBD5E0] hover:shadow-md`
+                  }`}
+                  onClick={() => toggleSource(source.id)}
                 >
-                  <Checkbox
-                    id={source.id}
-                    checked={selectedSources.includes(source.id)}
-                    onCheckedChange={(checked) => handleSourceChange(source.id, checked as boolean)}
-                    className="h-5 w-5 border-[#4299E1] data-[state=checked]:bg-[#4299E1] data-[state=checked]:text-white"
-                  />
-                  <Label
-                    htmlFor={source.id}
-                    className="flex items-center gap-2 text-lg font-medium text-[#2D3748] cursor-pointer"
+                  {/* Selection Indicator */}
+                  <div
+                    className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 transition-all duration-200 ${
+                      selectedSources.includes(source.id)
+                        ? "bg-[#FF6B35] border-[#FF6B35]"
+                        : "border-[#CBD5E0] bg-white"
+                    }`}
                   >
-                    {source.icon}
-                    <span>{source.name}</span>
-                  </Label>
-                </div>
+                    {selectedSources.includes(source.id) && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Source Content */}
+                  <div className={`${source.color} mb-4`}>{source.icon}</div>
+                  <h3 className="font-bold text-[#2D3748] text-lg mb-2">{source.name}</h3>
+                  <p className="text-[#718096] text-sm leading-relaxed">{source.description}</p>
+                </motion.div>
               ))}
             </div>
+          </div>
 
-            {/* Summary */}
-            <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F1F5F9] mt-8">
-              <h2 className="text-2xl font-bold text-[#2D3748] mb-6 text-center">Seus Insights de Aprendizado</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {loadingInsights ? (
-                  <>
-                    <Skeleton className="h-32 rounded-xl" />
-                    <Skeleton className="h-32 rounded-xl" />
-                    <Skeleton className="h-32 rounded-xl" />
-                  </>
-                ) : (
-                  <>
-                    <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border-blue-300 shadow-md">
-                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
-                        <Sparkles className="h-8 w-8 text-blue-600 mb-2" />
-                        <h3 className="font-semibold text-blue-800 text-lg mb-1">Experiência</h3>
-                        <p className="text-blue-700 text-sm">{insights?.experience}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-green-100 to-green-200 border-green-300 shadow-md">
-                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
-                        <BookOpen className="h-8 w-8 text-green-600 mb-2" />
-                        <h3 className="font-semibold text-green-800 text-lg mb-1">Estilo</h3>
-                        <p className="text-green-700 text-sm">{insights?.style}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-purple-100 to-purple-200 border-purple-300 shadow-md">
-                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
-                        <Target className="h-8 w-8 text-purple-600 mb-2" />
-                        <h3 className="font-semibold text-purple-800 text-lg mb-1">Objetivo</h3>
-                        <p className="text-purple-700 text-sm">{insights?.goal}</p>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
+          {/* Insights Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F1F5F9] sticky top-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-[#FF6B35] to-[#FF8A65] rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-[#2D3748]">Insights Personalizados</h3>
               </div>
-              <div className="mt-6 text-center text-[#4A5568] text-sm">
-                <p>
-                  Estes insights nos ajudam a curar o conteúdo mais relevante e adaptado ao seu perfil de aprendizado.
-                </p>
-              </div>
-            </div>
 
-            <div className="flex justify-end mt-8">
-              <Button
-                onClick={handleNext}
-                disabled={selectedSources.length === 0}
-                className="bg-[#4299E1] hover:bg-[#3182CE] text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transition-all duration-300 transform hover:scale-105"
-              >
-                Continuar
-              </Button>
+              {isLoadingInsights ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#F1F5F9] rounded-full animate-pulse" />
+                    <div className="h-4 bg-[#F1F5F9] rounded animate-pulse flex-1" />
+                  </div>
+                  <div className="h-3 bg-[#F1F5F9] rounded animate-pulse" />
+                  <div className="h-3 bg-[#F1F5F9] rounded animate-pulse w-3/4" />
+                </div>
+              ) : insights ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <Brain className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium text-[#2D3748] mb-1">Experiência</h4>
+                      <p className="text-sm text-[#718096] leading-relaxed">{insights.experience}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Target className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium text-[#2D3748] mb-1">Estilo</h4>
+                      <p className="text-sm text-[#718096] leading-relaxed">{insights.style}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium text-[#2D3748] mb-1">Objetivo</h4>
+                      <p className="text-sm text-[#718096] leading-relaxed">{insights.goal}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#F1F5F9]">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-[#2D3748] mb-1">Recomendação</h4>
+                        <p className="text-sm text-[#718096]">
+                          Com base no seu perfil, recomendamos começar com <strong>YouTube + GitHub</strong> para uma
+                          abordagem prática.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-[#718096]">
+                  <Brain className="w-8 h-8 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">Gerando insights personalizados...</p>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-16 pt-8 border-t border-[#F1F5F9]">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-6 py-3 text-[#718096] hover:text-[#2D3748] transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </button>
+
+          <div className="text-center">
+            <p className="text-sm text-[#718096] mb-2">
+              {selectedSources.length === 0
+                ? "Selecione pelo menos uma fonte"
+                : `${selectedSources.length} fonte${selectedSources.length > 1 ? "s" : ""} selecionada${selectedSources.length > 1 ? "s" : ""}`}
+            </p>
+          </div>
+
+          <button
+            onClick={handleContinue}
+            disabled={selectedSources.length === 0}
+            className={`flex items-center gap-2 px-8 py-3 rounded-full font-medium transition-all duration-200 ${
+              selectedSources.length > 0
+                ? "bg-[#FF6B35] hover:bg-[#E55A2B] text-white shadow-lg hover:shadow-xl"
+                : "bg-[#F1F5F9] text-[#A0ADB8] cursor-not-allowed"
+            }`}
+          >
+            Continuar
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </main>
     </div>
   )
 }
