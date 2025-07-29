@@ -1,118 +1,84 @@
-import { google } from "@ai-sdk/google"
-import { generateObject } from "ai"
-import { z } from "zod"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set")
-}
-
-const model = google("gemini-1.5-pro")
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export class GeminiService {
-  static async generateQuestions(topic: string, difficulty: string, count = 3) {
-    try {
-      const { object } = await generateObject({
-        model,
-        schema: z.object({
-          questions: z.array(
-            z.object({
-              question: z.string(),
-              type: z.enum(["multiple_choice", "open_ended", "preference"]),
-              options: z.array(z.string()).optional(),
-              context: z.string(),
-            }),
-          ),
-        }),
-        prompt: `Generate ${count} personalization questions for someone wanting to learn "${topic}" at ${difficulty} level. 
-        Questions should help understand their learning style, background, and preferences.
-        Make questions engaging and relevant to the topic.`,
-      })
+  private model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
 
-      return {
-        success: true,
-        data: object.questions,
+  async generateQuestions(topic: string): Promise<any[]> {
+    const prompt = `
+    Gere exatamente 3 perguntas personalizadas para alguém que quer aprender sobre "${topic}".
+    
+    As perguntas devem ajudar a entender:
+    1. Nível de experiência atual
+    2. Estilo de aprendizado preferido  
+    3. Objetivo específico com o tópico
+    
+    Responda APENAS em formato JSON válido:
+    [
+      {
+        "id": 1,
+        "question": "pergunta aqui",
+        "options": ["opção 1", "opção 2", "opção 3", "opção 4"]
+      },
+      {
+        "id": 2, 
+        "question": "pergunta aqui",
+        "options": ["opção 1", "opção 2", "opção 3", "opção 4"]
+      },
+      {
+        "id": 3,
+        "question": "pergunta aqui", 
+        "options": ["opção 1", "opção 2", "opção 3", "opção 4"]
       }
+    ]
+    `
+
+    try {
+      const result = await this.model.generateContent(prompt)
+      const response = await result.response
+      const text = response.text()
+
+      return JSON.parse(text)
     } catch (error) {
       console.error("Error generating questions:", error)
-      return {
-        success: false,
-        error: "Failed to generate questions",
-      }
+      throw error
     }
   }
 
-  static async generateLearningPath(topic: string, userAnswers: any[], culturalContext: any) {
-    try {
-      const { object } = await generateObject({
-        model,
-        schema: z.object({
-          title: z.string(),
-          description: z.string(),
-          estimatedHours: z.number(),
-          difficulty: z.enum(["beginner", "intermediate", "advanced"]),
-          outline: z.array(
-            z.object({
-              title: z.string(),
-              description: z.string(),
-              contentTypes: z.array(z.string()),
-              estimatedTime: z.number(),
-            }),
-          ),
-        }),
-        prompt: `Create a comprehensive learning path for "${topic}" based on these user preferences:
-        ${JSON.stringify(userAnswers)}
-        
-        Cultural context: ${JSON.stringify(culturalContext)}
-        
-        Structure the path with clear progression and varied content types.`,
-      })
-
-      return {
-        success: true,
-        data: object,
-      }
-    } catch (error) {
-      console.error("Error generating learning path:", error)
-      return {
-        success: false,
-        error: "Failed to generate learning path",
-      }
+  async generateInsights(answers: string[], topic: string) {
+    const prompt = `
+    Com base nas seguintes respostas sobre aprendizado de "${topic}":
+    
+    Resposta 1: ${answers[0] || "Não respondida"}
+    Resposta 2: ${answers[1] || "Não respondida"}  
+    Resposta 3: ${answers[2] || "Não respondida"}
+    
+    Gere insights personalizados e sucintos (máximo 15 palavras cada) para:
+    
+    1. experience: Análise do nível de experiência do usuário
+    2. style: Estilo de aprendizado preferido identificado
+    3. goal: Objetivo principal da jornada de aprendizado
+    
+    Responda APENAS em formato JSON válido:
+    {
+      "experience": "texto aqui",
+      "style": "texto aqui", 
+      "goal": "texto aqui"
     }
-  }
+    `
 
-  static async generateQuiz(pathContent: any[], culturalProfile: any) {
     try {
-      const { object } = await generateObject({
-        model,
-        schema: z.object({
-          questions: z.array(
-            z.object({
-              question: z.string(),
-              options: z.array(z.string()),
-              correctAnswer: z.number(),
-              explanation: z.string(),
-              culturalContext: z.string().optional(),
-            }),
-          ),
-        }),
-        prompt: `Generate a quiz based on this learning content:
-        ${JSON.stringify(pathContent)}
-        
-        Adapt questions for this cultural profile: ${JSON.stringify(culturalProfile)}
-        
-        Create 5-10 questions that test understanding and practical application.`,
-      })
+      const result = await this.model.generateContent(prompt)
+      const response = await result.response
+      const text = response.text()
 
-      return {
-        success: true,
-        data: object.questions,
-      }
+      return JSON.parse(text)
     } catch (error) {
-      console.error("Error generating quiz:", error)
-      return {
-        success: false,
-        error: "Failed to generate quiz",
-      }
+      console.error("Error generating insights:", error)
+      throw error
     }
   }
 }
+
+export const geminiService = new GeminiService()

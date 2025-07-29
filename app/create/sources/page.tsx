@@ -2,174 +2,207 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Sparkles, CheckCircle, Clock, BookOpen, Video, FileText, Code } from "lucide-react"
-import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Sparkles, BookOpen, Target, Youtube, Newspaper, Github, Globe } from "lucide-react"
+
+interface Insight {
+  experience: string
+  style: string
+  goal: string
+}
 
 export default function SourcesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const topic = searchParams.get("topic")
-  const answersParam = searchParams.get("answers")
-  
-  const [answers, setAnswers] = useState<Record<number, string>>({})
-  const [loading, setLoading] = useState(true)
+  const [selectedSources, setSelectedSources] = useState<string[]>([])
+  const [topic, setTopic] = useState<string>("")
+  const [answers, setAnswers] = useState<string[]>([])
+  const [insights, setInsights] = useState<Insight | null>(null)
+  const [loadingInsights, setLoadingInsights] = useState(true)
 
   useEffect(() => {
-    if (!topic || !answersParam) {
-      router.push("/")
-      return
-    }
+    const topicParam = searchParams.get("topic")
+    const answersParam = searchParams.get("answers")
 
+    if (topicParam) {
+      setTopic(topicParam)
+    }
+    if (answersParam) {
+      try {
+        const parsedAnswers = JSON.parse(answersParam)
+        // Convert answers object to array
+        const answersArray = Object.values(parsedAnswers) as string[]
+        setAnswers(answersArray)
+      } catch (error) {
+        console.error("Error parsing answers:", error)
+        setAnswers([])
+      }
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (answers.length > 0 && topic) {
+      generateInsights()
+    }
+  }, [answers, topic])
+
+  const handleSourceChange = (source: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSources((prev) => [...prev, source])
+    } else {
+      setSelectedSources((prev) => prev.filter((s) => s !== source))
+    }
+  }
+
+  const generateInsights = async () => {
+    setLoadingInsights(true)
     try {
-      const parsedAnswers = JSON.parse(answersParam)
-      setAnswers(parsedAnswers)
-      setLoading(false)
+      const response = await fetch("/api/ai/insights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ answers, topic }),
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.insights) {
+        setInsights(data.insights)
+      } else {
+        console.error("Failed to fetch insights:", data.error)
+        // Fallback insights
+        setInsights({
+          experience: "Nível de experiência em análise.",
+          style: "Estilo de aprendizado sendo processado.",
+          goal: "Objetivo principal da jornada em definição.",
+        })
+      }
     } catch (error) {
-      console.error("Erro ao parsear respostas:", error)
-      router.push("/")
+      console.error("Error generating insights:", error)
+      // Fallback insights on network error
+      setInsights({
+        experience: "Não foi possível gerar insights de experiência.",
+        style: "Não foi possível gerar insights de estilo.",
+        goal: "Não foi possível gerar insights de objetivo.",
+      })
+    } finally {
+      setLoadingInsights(false)
     }
-  }, [topic, answersParam, router])
-
-  const goBack = () => {
-    const queryParams = new URLSearchParams({ topic: topic || "" })
-    router.push(`/create/questions?${queryParams}`)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-[#FF6B35] border-t-transparent rounded-full mx-auto mb-6"
-          />
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2">Carregando...</h2>
-        </div>
-      </div>
-    )
+  const handleNext = () => {
+    const params = new URLSearchParams()
+    params.set("topic", topic)
+    params.set("answers", JSON.stringify(answers))
+    params.set("sources", JSON.stringify(selectedSources))
+    router.push(`/create/processing?${params.toString()}`)
   }
+
+  const sourceOptions = [
+    { id: "youtube", name: "YouTube", icon: <Youtube className="h-5 w-5 text-red-500" /> },
+    { id: "medium", name: "Medium Articles", icon: <Newspaper className="h-5 w-5 text-gray-700" /> },
+    { id: "github", name: "GitHub Repos", icon: <Github className="h-5 w-5 text-gray-800" /> },
+    { id: "web", name: "Web Articles", icon: <Globe className="h-5 w-5 text-blue-500" /> },
+    { id: "books", name: "Books", icon: <BookOpen className="h-5 w-5 text-amber-700" /> },
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50/30 to-white">
-      {/* Header */}
-      <header className="px-6 py-6 border-b border-[#F1F5F9]/50 backdrop-blur-sm bg-white/80">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <button
-            onClick={goBack}
-            className="flex items-center gap-2 text-[#718096] hover:text-[#2D3748] transition-all duration-200 hover:scale-105"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Voltar</span>
-          </button>
-          <div className="inline-flex items-center gap-2 bg-[#FFE5D9] text-[#FF6B35] px-3 py-1 rounded-full text-sm font-medium">
-            <Sparkles className="w-4 h-4" />
-            <span>{topic}</span>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#E0F2F7] to-[#B3E0F2] p-4 sm:p-6 lg:p-8">
+      <Progress value={66} className="w-full max-w-md mx-auto mb-8" />
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold text-[#2D3748] mb-6">
-              Descobrindo as melhores fontes
-            </h1>
-            <p className="text-xl text-[#718096] max-w-2xl mx-auto">
-              Com base nas suas respostas, estamos curando o melhor conteúdo para sua trilha de aprendizado
+      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto">
+        <Card className="w-full max-w-2xl p-6 sm:p-8 rounded-3xl shadow-xl">
+          <CardHeader className="text-center mb-6">
+            <CardTitle className="text-3xl font-extrabold text-[#2D3748]">Escolha suas fontes de aprendizado</CardTitle>
+            <p className="text-lg text-[#4A5568] mt-2">
+              De onde você prefere aprender sobre <span className="font-semibold">{topic}</span>?
             </p>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="flex justify-center mb-16">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#10B981] rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[#10B981] font-medium">Perguntas</span>
-              </div>
-              <div className="w-16 h-0.5 bg-[#FF6B35]" />
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#FF6B35] rounded-full flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-white animate-spin" />
-                </div>
-                <span className="text-[#FF6B35] font-medium">Fontes</span>
-              </div>
-              <div className="w-16 h-0.5 bg-[#E2E8F0]" />
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#E2E8F0] rounded-full flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-[#A0ADB8]" />
-                </div>
-                <span className="text-[#A0ADB8] font-medium">Trilha</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Discovery Animation */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {[
-              { icon: Video, label: "Vídeos", color: "from-red-500 to-red-600" },
-              { icon: FileText, label: "Artigos", color: "from-blue-500 to-blue-600" },
-              { icon: Code, label: "Tutoriais", color: "from-green-500 to-green-600" },
-              { icon: BookOpen, label: "Documentação", color: "from-purple-500 to-purple-600" },
-            ].map((item, index) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.2, duration: 0.5 }}
-                className="bg-white rounded-2xl p-6 shadow-lg border border-[#F1F5F9] text-center"
-              >
-                <div className={`w-16 h-16 bg-gradient-to-r ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                  <item.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="font-bold text-[#2D3748] mb-2">{item.label}</h3>
-                <div className="flex justify-center">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    className="w-6 h-6 border-2 border-[#FF6B35] border-t-transparent rounded-full"
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              {sourceOptions.map((source) => (
+                <div
+                  key={source.id}
+                  className="flex items-center space-x-3 p-4 border border-[#CBD5E0] rounded-xl bg-white shadow-sm transition-all hover:shadow-md"
+                >
+                  <Checkbox
+                    id={source.id}
+                    checked={selectedSources.includes(source.id)}
+                    onCheckedChange={(checked) => handleSourceChange(source.id, checked as boolean)}
+                    className="h-5 w-5 border-[#4299E1] data-[state=checked]:bg-[#4299E1] data-[state=checked]:text-white"
                   />
+                  <Label
+                    htmlFor={source.id}
+                    className="flex items-center gap-2 text-lg font-medium text-[#2D3748] cursor-pointer"
+                  >
+                    {source.icon}
+                    <span>{source.name}</span>
+                  </Label>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Summary */}
-          <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F1F5F9]">
-            <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Suas preferências</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-2xl">🎯</span>
-                </div>
-                <h3 className="font-medium text-[#2D3748] mb-1">Experiência</h3>
-                <p className="text-[#718096] text-sm">Resposta registrada</p>
+            {/* Summary */}
+            <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F1F5F9] mt-8">
+              <h2 className="text-2xl font-bold text-[#2D3748] mb-6 text-center">Seus Insights de Aprendizado</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {loadingInsights ? (
+                  <>
+                    <Skeleton className="h-32 rounded-xl" />
+                    <Skeleton className="h-32 rounded-xl" />
+                    <Skeleton className="h-32 rounded-xl" />
+                  </>
+                ) : (
+                  <>
+                    <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border-blue-300 shadow-md">
+                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
+                        <Sparkles className="h-8 w-8 text-blue-600 mb-2" />
+                        <h3 className="font-semibold text-blue-800 text-lg mb-1">Experiência</h3>
+                        <p className="text-blue-700 text-sm">{insights?.experience}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-100 to-green-200 border-green-300 shadow-md">
+                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
+                        <BookOpen className="h-8 w-8 text-green-600 mb-2" />
+                        <h3 className="font-semibold text-green-800 text-lg mb-1">Estilo</h3>
+                        <p className="text-green-700 text-sm">{insights?.style}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-purple-100 to-purple-200 border-purple-300 shadow-md">
+                      <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
+                        <Target className="h-8 w-8 text-purple-600 mb-2" />
+                        <h3 className="font-semibold text-purple-800 text-lg mb-1">Objetivo</h3>
+                        <p className="text-purple-700 text-sm">{insights?.goal}</p>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-2xl">📚</span>
-                </div>
-                <h3 className="font-medium text-[#2D3748] mb-1">Estilo</h3>
-                <p className="text-[#718096] text-sm">Resposta registrada</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-2xl">⚡</span>
-                </div>
-                <h3 className="font-medium text-[#2D3748] mb-1">Objetivo</h3>
-                <p className="text-[#718096] text-sm">Resposta registrada</p>
+              <div className="mt-6 text-center text-[#4A5568] text-sm">
+                <p>
+                  Estes insights nos ajudam a curar o conteúdo mais relevante e adaptado ao seu perfil de aprendizado.
+                </p>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </main>
+
+            <div className="flex justify-end mt-8">
+              <Button
+                onClick={handleNext}
+                disabled={selectedSources.length === 0}
+                className="bg-[#4299E1] hover:bg-[#3182CE] text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Continuar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
