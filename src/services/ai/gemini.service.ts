@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export class GeminiService {
-  private model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+  private model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
   async generateQuestions(topic: string): Promise<any[]> {
     const prompt = `
@@ -60,7 +60,7 @@ export class GeminiService {
     2. style: Estilo de aprendizado preferido identificado
     3. goal: Objetivo principal da jornada de aprendizado
     
-    Responda APENAS em formato JSON válido:
+    Responda APENAS em formato JSON válido (não markdown):
     {
       "experience": "texto aqui",
       "style": "texto aqui", 
