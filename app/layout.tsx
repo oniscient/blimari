@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.className} ${GeomoMono.className}`}>
+    <html lang="en" className={`${GeistSans.className} ${GeistMono.className}`}>
       <body>{children}</body>
     </html>
   )
