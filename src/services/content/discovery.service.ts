@@ -1,4 +1,4 @@
-import type { ContentItem, ContentDiscoveryRequest, ContentType } from "@/types"
+import type { ContentItem, ContentDiscoveryRequest, ContentType } from "@/src/types"
 
 export class ContentDiscoveryService {
   static async discoverContent(request: ContentDiscoveryRequest): Promise<ContentItem[]> {
@@ -14,8 +14,8 @@ export class ContentDiscoveryService {
 
     // Medium articles
     if (contentTypes.includes("article")) {
-      const mediumContent = await this.searchMedium(topic, difficulty, limit)
-      discoveredContent.push(...mediumContent)
+      const googleContent = await this.searchGoogle(topic, difficulty, limit)
+      discoveredContent.push(...googleContent)
     }
 
     // GitHub repositories
@@ -36,16 +36,21 @@ export class ContentDiscoveryService {
   private static async searchYouTube(topic: string, difficulty: string, limit: number): Promise<ContentItem[]> {
     if (!process.env.YOUTUBE_API_KEY) {
       console.warn("YouTube API key not configured")
+      console.log("YOUTUBE_API_KEY:", process.env.YOUTUBE_API_KEY); // Log API key status
       return []
     }
 
     try {
       const query = `${topic} ${difficulty} tutorial`
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${limit}&key=${process.env.YOUTUBE_API_KEY}`,
-      )
+      const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${limit}&key=${process.env.YOUTUBE_API_KEY}`;
+      console.log("Constructed YouTube API URL:", youtubeApiUrl); // Log constructed URL
+
+      const response = await fetch(youtubeApiUrl)
+      console.log("Raw YouTube API response status:", response.status); // Log raw response status
+      console.log("Raw YouTube API response OK:", response.ok); // Log raw response ok status
 
       const data = await response.json()
+      console.log("Parsed YouTube API response data:", data); // Log raw response data
 
       return (
         data.items?.map((item: any) => ({
@@ -67,15 +72,48 @@ export class ContentDiscoveryService {
         })) || []
       )
     } catch (error) {
-      console.error("YouTube search error:", error)
+      console.error("YouTube search error:", error); // Existing error log
+      console.error("Detailed YouTube search error:", error); // Add detailed error log
       return []
     }
   }
 
-  private static async searchMedium(topic: string, difficulty: string, limit: number): Promise<ContentItem[]> {
-    // Medium doesn't have a public API, so we'd use RSS feeds or web scraping
-    // This is a placeholder implementation
-    return []
+  private static async searchGoogle(topic: string, difficulty: string, limit: number): Promise<ContentItem[]> {
+    if (!process.env.GOOGLE_CUSTOM_SEARCH_API_KEY || !process.env.GOOGLE_CUSTOM_SEARCH_CX) {
+      console.warn("Google Custom Search API key or CX not configured for Google search")
+      return []
+    }
+
+    try {
+      const query = `${topic} ${difficulty} blog post` // Targeting general blog posts
+      const customSearchApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_CUSTOM_SEARCH_API_KEY}&cx=${process.env.GOOGLE_CUSTOM_SEARCH_CX}&q=${encodeURIComponent(query)}&num=${limit}`;
+
+      const response = await fetch(customSearchApiUrl);
+      const data = await response.json();
+
+      if (data.items) {
+        return data.items.map((item: any) => ({
+          id: item.link, // Using link as ID for uniqueness
+          title: item.title,
+          description: item.snippet,
+          type: "article" as ContentType,
+          source: "google-search",
+          url: item.link,
+          durationMinutes: null, // Custom Search API doesn't provide duration
+          difficulty: this.parseDifficulty(difficulty),
+          culturalScore: 0, // Placeholder
+          qualityScore: 0.6, // Base score for articles
+          metadata: {
+            displayLink: item.displayLink,
+            pagemap: item.pagemap, // Contains rich snippets like image, author, etc.
+          },
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error("Google Custom Search (Google Search) error:", error);
+      return [];
+    }
   }
 
   private static async searchGitHub(topic: string, difficulty: string, limit: number): Promise<ContentItem[]> {

@@ -10,17 +10,12 @@ import {
   Download,
   Filter,
   CheckCircle,
-  Youtube,
-  Github,
-  Globe,
-  FileText,
-  BookOpen,
   Loader2,
-  Clock,
-  Users,
-  Star,
 } from "lucide-react"
-import { Button } from "@/components/ui/button" // Import Button component
+import { Button } from "@/components/ui/button"
+import { ContentCard } from "@/components/ContentCard"
+import { ContentDetailsPopup } from "@/components/ContentDetailsPopup"
+import { Stepper, Step } from "@/components/ui/Stepper"
 
 interface ContentItem {
   id: string
@@ -56,6 +51,8 @@ export default function ProcessingPage() {
   const [discoveredContent, setDiscoveredContent] = useState<ContentItem[]>([])
   const [isComplete, setIsComplete] = useState(false)
   const hasStarted = useRef(false)
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null)
+  const [isPopupOpen, setIsPopupOpen] = useState(false)
 
   const [steps, setSteps] = useState<ProcessingStep[]>([
     {
@@ -122,13 +119,12 @@ export default function ProcessingPage() {
 
       // Update step to processing
       setSteps((prev) =>
-        prev.map((s, i) => (i === stepIndex ? { ...s, status: "processing" as const, progress: 0 } : s)),
+        prev.map((s, i) => (i === stepIndex ? { ...s, status: "processing" as const } : s)),
       )
 
       // Simulate progress
       for (let progress = 0; progress <= 100; progress += 10) {
         await new Promise((resolve) => setTimeout(resolve, 200))
-        setSteps((prev) => prev.map((s, i) => (i === stepIndex ? { ...s, progress } : s)))
         setOverallProgress((stepIndex * 100 + progress) / steps.length)
       }
 
@@ -153,22 +149,43 @@ export default function ProcessingPage() {
               id: "1",
               title: `Introdução ao ${topic}`,
               description: "Um guia completo para iniciantes",
-              url: "#",
+              url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
               source: "youtube",
               type: "video",
               duration: "15 min",
               author: "Tech Expert",
               rating: 4.8,
+              thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg",
             },
             {
               id: "2",
               title: `${topic} - Projeto Prático`,
-              description: "Repositório com exemplos práticos",
-              url: "#",
+              description: "Repositório com exemplos práticos de código para aprender.",
+              url: "https://github.com/example/repo",
               source: "github",
               type: "repository",
               author: "DevCommunity",
               rating: 4.5,
+            },
+            {
+              id: "3",
+              title: `Artigo sobre ${topic}`,
+              description: "Um artigo aprofundado sobre os conceitos avançados.",
+              url: "https://medium.com/example/article",
+              source: "medium",
+              type: "article",
+              author: "Knowledge Hub",
+              rating: 4.2,
+            },
+            {
+              id: "4",
+              title: `Livro: Dominando ${topic}`,
+              description: "Um livro abrangente para se tornar um especialista.",
+              url: "https://example.com/book",
+              source: "books",
+              type: "book",
+              author: "Master Minds",
+              rating: 4.9,
             },
           ])
         }
@@ -176,7 +193,7 @@ export default function ProcessingPage() {
 
       // Mark step as completed
       setSteps((prev) =>
-        prev.map((s, i) => (i === stepIndex ? { ...s, status: "completed" as const, progress: 100 } : s)),
+        prev.map((s, i) => (i === stepIndex ? { ...s, status: "completed" as const } : s)),
       )
     },
     [steps, topic, sources, answers],
@@ -207,21 +224,14 @@ export default function ProcessingPage() {
     router.push("/dashboard")
   }
 
-  const getSourceIcon = (source: string) => {
-    switch (source) {
-      case "youtube":
-        return <Youtube className="w-4 h-4 text-red-500" />
-      case "github":
-        return <Github className="w-4 h-4 text-gray-800" />
-      case "web":
-        return <Globe className="w-4 h-4 text-blue-500" />
-      case "medium":
-        return <FileText className="w-4 h-4 text-green-600" />
-      case "books":
-        return <BookOpen className="w-4 h-4 text-amber-600" />
-      default:
-        return <FileText className="w-4 h-4" />
-    }
+  const handleCardClick = (item: ContentItem) => {
+    setSelectedContent(item)
+    setIsPopupOpen(true)
+  }
+
+  const handleClosePopup = () => {
+    setIsPopupOpen(false)
+    setSelectedContent(null)
   }
 
   if (!topic || sources.length === 0) {
@@ -270,57 +280,7 @@ export default function ProcessingPage() {
           {/* Processing Steps */}
           <div>
             <h2 className="text-xl font-bold text-[#2D3748] mb-8">Progresso da Criação</h2>
-            <div className="space-y-6">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`relative p-6 rounded-2xl border-2 transition-all duration-300 ${
-                    step.status === "completed"
-                      ? "border-green-200 bg-green-50"
-                      : step.status === "processing"
-                        ? "border-[#FF6B35] bg-orange-50"
-                        : "border-[#E2E8F0] bg-white"
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        step.status === "completed"
-                          ? "bg-green-500 text-white"
-                          : step.status === "processing"
-                            ? "bg-[#FF6B35] text-white"
-                            : "bg-[#F1F5F9] text-[#718096]"
-                      }`}
-                    >
-                      {step.status === "processing" ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      ) : step.status === "completed" ? (
-                        <CheckCircle className="w-6 h-6" />
-                      ) : (
-                        step.icon
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-[#2D3748] text-lg mb-1">{step.title}</h3>
-                      <p className="text-[#718096] text-sm mb-3">{step.description}</p>
-                      {step.status === "processing" && (
-                        <div className="w-full bg-[#F1F5F9] rounded-full h-2">
-                          <motion.div
-                            className="bg-[#FF6B35] h-2 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${step.progress}%` }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <Stepper steps={steps} currentStep={currentStep} />
 
             {isComplete && (
               <motion.div
@@ -348,51 +308,15 @@ export default function ProcessingPage() {
           {/* Content Preview */}
           <div>
             <h2 className="text-xl font-bold text-[#2D3748] mb-8">Conteúdo Descoberto</h2>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <AnimatePresence>
                 {discoveredContent.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-white rounded-2xl p-6 border border-[#F1F5F9] shadow-sm hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-[#F8FAFC] rounded-xl flex items-center justify-center flex-shrink-0">
-                        {getSourceIcon(item.source)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-[#2D3748] text-lg mb-2 line-clamp-2">{item.title}</h3>
-                        <p className="text-[#718096] text-sm mb-3 line-clamp-2">{item.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-[#A0ADB8]">
-                          {item.author && (
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>{item.author}</span>
-                            </div>
-                          )}
-                          {item.duration && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{item.duration}</span>
-                            </div>
-                          )}
-                          {item.rating && (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3 h-3 fill-current text-yellow-400" />
-                              <span>{item.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                  <ContentCard key={item.id} item={item} onClick={handleCardClick} />
                 ))}
               </AnimatePresence>
 
               {discoveredContent.length === 0 && currentStep >= 0 && (
-                <div className="text-center py-12">
+                <div className="text-center py-12 col-span-full">
                   <div className="w-16 h-16 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
                     <Search className="w-8 h-8 text-[#A0ADB8]" />
                   </div>
@@ -403,6 +327,12 @@ export default function ProcessingPage() {
           </div>
         </div>
       </main>
+
+      <ContentDetailsPopup
+        isOpen={isPopupOpen}
+        onClose={handleClosePopup}
+        item={selectedContent}
+      />
     </div>
   )
 }

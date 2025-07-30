@@ -50,17 +50,27 @@ export interface LearningPath {
 export interface ContentItem {
   // Mapeado de PathContent no seu schema
   id: string
-  pathId: string // Mapeado de path_id
+  pathId?: string // Made optional for initial discovery
   title: string
   url: string
   contentType: ContentType // Mapeado de content_type
   durationMinutes?: number // Mapeado de duration_minutes
-  orderIndex: number // Mapeado de order_index
-  isCompleted: boolean // Mapeado de is_completed
-  completedAt?: Date // Mapeado de completed_at
+  orderIndex?: number // Made optional for initial discovery
+  isCompleted?: boolean // Made optional for initial discovery
+  completedAt?: Date // Mapeado de completed_at, made optional for initial discovery
   culturalEnhancements?: Record<string, any> // Mapeado de cultural_enhancements
   source?: string
   createdAt: Date
+
+  // New fields for content discovery
+  description?: string
+  author?: string
+  rating?: number
+  thumbnail?: string
+  difficulty?: number
+  culturalScore: number
+  qualityScore: number
+  metadata?: Record<string, any>
 }
 
 export type ContentType = "video" | "article" | "tutorial" | "documentation" | "course" | "podcast" | "book"

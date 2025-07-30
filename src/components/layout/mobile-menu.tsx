@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, Home, PlusCircle, LayoutDashboard, BookOpen, HelpCircle, Info, Lock } from "lucide-react"
+import { Home, PlusCircle, LayoutDashboard, BookOpen, HelpCircle, Info, Lock } from "lucide-react"
+import AnimatedHamburger from "../../../components/ui/AnimatedHamburger"
 import Link from "next/link"
 
 export function MobileMenu() {
@@ -45,7 +46,7 @@ export function MobileMenu() {
               exit={{ rotate: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <X className="h-6 w-6" />
+              <AnimatedHamburger checked={isOpen} onChange={toggleMenu} />
             </motion.div>
           ) : (
             <motion.div
@@ -55,7 +56,7 @@ export function MobileMenu() {
               exit={{ rotate: 90 }}
               transition={{ duration: 0.2 }}
             >
-              <Menu className="h-6 w-6" />
+              <AnimatedHamburger checked={isOpen} onChange={toggleMenu} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -77,7 +78,7 @@ export function MobileMenu() {
                 className="p-2 rounded-md text-[#2D3748] hover:bg-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
                 aria-label="Close menu"
               >
-                <X className="h-6 w-6" />
+                <AnimatedHamburger checked={isOpen} onChange={toggleMenu} />
               </button>
             </div>
             <ul className="space-y-4">
