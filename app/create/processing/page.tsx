@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { ContentCard } from "@/components/ContentCard"
 import { ContentDetailsPopup } from "@/components/ContentDetailsPopup"
 import { Stepper, Step } from "@/components/ui/Stepper"
+import Loader from "@/components/ui/loading"
 
 interface ContentItem {
   id: string
@@ -316,11 +317,9 @@ export default function ProcessingPage() {
               </AnimatePresence>
 
               {discoveredContent.length === 0 && currentStep >= 0 && (
-                <div className="text-center py-12 col-span-full">
-                  <div className="w-16 h-16 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-[#A0ADB8]" />
-                  </div>
-                  <p className="text-[#718096]">Buscando conteúdo...</p>
+                <div className="text-center py-12 col-span-full flex flex-col items-center justify-center">
+                  <Loader />
+                  <p className="text-[#718096] mt-4">Buscando conteúdo...</p>
                 </div>
               )}
             </div>

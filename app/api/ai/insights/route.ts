@@ -9,11 +9,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing answers or topic" }, { status: 400 })
     }
 
-    const insights = await geminiService.generateInsights(answers, topic)
+    const { insightText, recommendedSources } = await geminiService.generateInsights(answers, topic)
 
     return NextResponse.json({
       success: true,
-      insights,
+      insights: {
+        insightText,
+        recommendedSources,
+      },
     })
   } catch (error) {
     console.error("Erro ao gerar insights:", error)
@@ -22,9 +25,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       insights: {
-        experience: "Perfil de aprendizado em análise",
-        style: "Preferências sendo processadas",
-        goal: "Objetivos sendo definidos",
+        insightText: "Não foi possível gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+        recommendedSources: [],
       },
     })
   }

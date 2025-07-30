@@ -10,14 +10,12 @@ import {
   Github,
   Globe,
   BookOpen,
-  FileText,
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  Brain,
-  Target,
   Lightbulb,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 interface Source {
   id: string
@@ -30,9 +28,8 @@ interface Source {
 }
 
 interface Insight {
-  experience: string
-  style: string
-  goal: string
+  insightText: string
+  recommendedSources: string[]
 }
 
 const sources: Source[] = [
@@ -64,15 +61,6 @@ const sources: Source[] = [
     borderColor: "border-blue-200 hover:border-blue-300",
   },
   {
-    id: "medium",
-    name: "Medium",
-    description: "Artigos de desenvolvedores e especialistas",
-    icon: <FileText className="w-6 h-6" />,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200 hover:border-green-300",
-  },
-  {
     id: "books",
     name: "Books & Docs",
     description: "Documentações oficiais e livros técnicos",
@@ -91,6 +79,7 @@ export default function SourcesPage() {
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [insights, setInsights] = useState<Insight | null>(null)
   const [isLoadingInsights, setIsLoadingInsights] = useState(false)
+  const [useAISuggestions, setUseAISuggestions] = useState(true) // Default to true
 
   useEffect(() => {
     const topicParam = searchParams.get("topic")
@@ -113,13 +102,22 @@ export default function SourcesPage() {
         console.error("Error parsing answers:", error)
       }
     }
-  }, [searchParams]) // Remove answers from dependencies
+  }, [searchParams, answers]) // Keep answers in dependencies
 
   useEffect(() => {
     if (answers.length > 0 && !insights && !isLoadingInsights) {
       generateInsights()
     }
   }, [answers, insights, isLoadingInsights])
+
+  useEffect(() => {
+    if (insights?.recommendedSources && useAISuggestions) {
+      setSelectedSources(insights.recommendedSources)
+    } else if (insights?.recommendedSources && !useAISuggestions) {
+      // If AI suggestions are turned off, clear selections unless user has manually selected
+      // For now, we'll just keep the current selection, but this could be refined
+    }
+  }, [insights, useAISuggestions])
 
   const generateInsights = async () => {
     if (isLoadingInsights) return
@@ -141,27 +139,27 @@ export default function SourcesPage() {
         const data = await response.json()
         if (data.success && data.insights) {
           setInsights(data.insights)
+          if (data.insights.recommendedSources && data.insights.recommendedSources.length > 0) {
+            setSelectedSources(data.insights.recommendedSources)
+          }
         } else {
           // Fallback insights
           setInsights({
-            experience: "Perfil de aprendizado em análise",
-            style: "Preferências sendo processadas",
-            goal: "Objetivos sendo definidos",
+            insightText: "Não foi possível gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+            recommendedSources: [],
           })
         }
       } else {
         setInsights({
-          experience: "Não foi possível gerar insights de experiência",
-          style: "Não foi possível gerar insights de estilo",
-          goal: "Não foi possível gerar insights de objetivo",
+          insightText: "Não foi possível gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+          recommendedSources: [],
         })
       }
     } catch (error) {
       console.error("Error generating insights:", error)
       setInsights({
-        experience: "Erro ao gerar insights de experiência",
-        style: "Erro ao gerar insights de estilo",
-        goal: "Erro ao gerar insights de objetivo",
+        insightText: "Erro ao gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+        recommendedSources: [],
       })
     } finally {
       setIsLoadingInsights(false)
@@ -262,12 +260,6 @@ export default function SourcesPage() {
           {/* Insights Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F1F5F9] sticky top-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-[#FF6B35] to-[#FF8A65] rounded-full flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-[#2D3748]">Insights Personalizados</h3>
-              </div>
 
               {isLoadingInsights ? (
                 <div className="space-y-4">
@@ -281,45 +273,37 @@ export default function SourcesPage() {
               ) : insights ? (
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <Brain className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium text-[#2D3748] mb-1">Experiência</h4>
-                      <p className="text-sm text-[#718096] leading-relaxed">{insights.experience}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Target className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium text-[#2D3748] mb-1">Estilo</h4>
-                      <p className="text-sm text-[#718096] leading-relaxed">{insights.style}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
                     <Lightbulb className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-medium text-[#2D3748] mb-1">Objetivo</h4>
-                      <p className="text-sm text-[#718096] leading-relaxed">{insights.goal}</p>
+                      <h4 className="font-medium text-[#2D3748] mb-1">Insight Personalizado</h4>
+                      <p className="text-sm text-[#718096] leading-relaxed">{insights.insightText}</p>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-[#F1F5F9]">
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium text-[#2D3748] mb-1">Recomendação</h4>
-                        <p className="text-sm text-[#718096]">
-                          Com base no seu perfil, recomendamos começar com <strong>YouTube + GitHub</strong> para uma
-                          abordagem prática.
-                        </p>
+                  {insights.recommendedSources && insights.recommendedSources.length > 0 && (
+                    <div className="pt-4 border-t border-[#F1F5F9]">
+                      <div className="flex items-start gap-3">
+                        <Sparkles className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-medium text-[#2D3748] mb-1">Fontes Recomendadas</h4>
+                          <p className="text-sm text-[#718096]">
+                            {insights.recommendedSources
+                              .map((sourceId) => sources.find((s) => s.id === sourceId)?.name || sourceId)
+                              .join(", ")}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-4 border-t border-[#F1F5F9]">
+                    <span className="text-sm font-medium text-[#2D3748]">Usar sugestões da IA</span>
+                    <Switch checked={useAISuggestions} onCheckedChange={setUseAISuggestions} />
                   </div>
                 </div>
               ) : (
                 <div className="text-center text-[#718096]">
-                  <Brain className="w-8 h-8 mx-auto mb-3 opacity-50" />
+                  <Sparkles className="w-8 h-8 mx-auto mb-3 opacity-50" />
                   <p className="text-sm">Gerando insights personalizados...</p>
                 </div>
               )}
