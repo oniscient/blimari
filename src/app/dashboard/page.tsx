@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Progress } from "@/src/components/ui/progress";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
+import { LearningPath, OrganizedTrail } from "@/src/types"; // Importar tipos
 
 // Mock Data
 const mockLearningModules = [
@@ -147,6 +148,41 @@ export default function DashboardPage() {
         .catch(error => {
           console.error('Erro na sincronização:', error);
         });
+
+      // Verificar e sincronizar trilhas de aprendizado do localStorage
+      const localLearningPath = localStorage.getItem("localLearningPath");
+      if (localLearningPath) {
+        try {
+          const { topic, organizedTrail } = JSON.parse(localLearningPath);
+          console.log("Found local learning path, attempting to save to DB:", { topic, organizedTrail });
+
+          fetch("/api/learning-paths/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: `Trilha de ${topic}`,
+              topic,
+              difficulty: "beginner", // Placeholder
+              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+              organizedTrail,
+            }),
+          })
+            .then((res) => {
+              if (res.ok) {
+                console.log("Local learning path successfully saved to DB.");
+                localStorage.removeItem("localLearningPath"); // Remover após salvar
+              } else {
+                console.error("Failed to save local learning path to DB:", res.status, res.statusText);
+              }
+            })
+            .catch((error) => {
+              console.error("Error saving local learning path to DB:", error);
+            });
+        } catch (error) {
+          console.error("Error parsing local learning path from localStorage:", error);
+          localStorage.removeItem("localLearningPath"); // Limpar dados corrompidos
+        }
+      }
     }
   }, [user]);
 
@@ -173,8 +209,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="px-6 py-4">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
+      <header className="px-6 py-6 border-b border-[#F1F5F9]/50 backdrop-blur-sm bg-white/80">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Link href="/">
             <h1 className="text-lg font-medium text-[#2D3748]">Blimari</h1>
           </Link>
@@ -182,7 +218,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-6 space-y-8 max-w-screen-xl mx-auto w-full">
+      <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold text-[#2D3748]">
           Olá, {user.displayName || "Explorador"}!
         </h1>
@@ -244,7 +280,7 @@ export default function DashboardPage() {
         {/* Módulos de Aprendizado Section */}
         <section className="mt-8">
           <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Módulos de Aprendizado</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {mockLearningModules.map((module) => (
               <Card
                 key={module.id}
@@ -306,7 +342,7 @@ export default function DashboardPage() {
         {/* Conteúdo Recomendado Section */}
         <section className="mt-8">
           <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Conteúdo Recomendado</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {mockRecommendedContent.map((content) => (
               <Card
                 key={content.id}

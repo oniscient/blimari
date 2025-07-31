@@ -47,6 +47,7 @@ export interface LearningPath {
   updatedAt: Date
   description: string
   progress: number
+  organizedTrail?: OrganizedTrail // Adicionado para armazenar a trilha organizada
 }
 
 export interface ContentItem {
@@ -61,7 +62,10 @@ export interface ContentItem {
   isCompleted?: boolean // Made optional for initial discovery
   completedAt?: Date // Mapeado de completed_at, made optional for initial discovery
   culturalEnhancements?: Record<string, any> // Mapeado de cultural_enhancements
-  source?: string
+  source: string // Alterado para ser obrigatório
+  type: string // Adicionado
+  duration?: string // Adicionado
+  isApproved?: boolean // Adicionado
   createdAt: Date
 
   // New fields for content discovery
@@ -164,4 +168,16 @@ export interface ContentDiscoveryRequest {
   contentTypes: ContentType[]
   culturalProfile: QlooProfile
   limit: number
+}
+
+export interface TrailSection {
+  sectionTitle: string;
+  items: {
+    id: string;
+    organizedDescription: string; // Nova descrição organizada
+  }[];
+}
+
+export interface OrganizedTrail {
+  organizedTrail: TrailSection[];
 }

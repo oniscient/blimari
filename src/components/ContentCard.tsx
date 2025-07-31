@@ -4,19 +4,7 @@ import type React from "react"
 import { motion } from "framer-motion"
 import { Youtube, Github, Globe, FileText, BookOpen, Clock, Users, Star } from "lucide-react"
 import Image from "next/image"
-
-interface ContentItem {
-  id: string
-  title: string
-  description: string
-  url: string
-  source: string
-  type: string
-  duration?: string
-  author?: string
-  rating?: number
-  thumbnail?: string
-}
+import { ContentItem } from "@/src/types" // Importar ContentItem do tipo global
 
 interface ContentCardProps {
   item: ContentItem

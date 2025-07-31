@@ -11,19 +11,7 @@ import {
 import { Button } from "@/src/components/ui/button"
 import Image from "next/image"
 import { Youtube, Github, Globe, FileText, BookOpen, Clock, Users, Star, X } from "lucide-react"
-
-interface ContentItem {
-  id: string
-  title: string
-  description: string
-  url: string
-  source: string
-  type: string
-  duration?: string
-  author?: string
-  rating?: number
-  thumbnail?: string
-}
+import { ContentItem } from "@/src/types" // Importar ContentItem do tipo global
 
 interface ContentDetailsPopupProps {
   isOpen: boolean
@@ -75,10 +63,12 @@ export function ContentDetailsPopup({ isOpen, onClose, item }: ContentDetailsPop
           )}
 
           <div className="flex items-center gap-3 text-sm text-[#718096]">
-            <div className="flex items-center gap-1">
-              {getSourceIcon(item.source)}
-              <span>{item.source.charAt(0).toUpperCase() + item.source.slice(1)}</span>
-            </div>
+            {item.source && (
+              <div className="flex items-center gap-1">
+                {getSourceIcon(item.source)}
+                <span>{item.source.charAt(0).toUpperCase() + item.source.slice(1)}</span>
+              </div>
+            )}
             {item.author && (
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
@@ -100,7 +90,7 @@ export function ContentDetailsPopup({ isOpen, onClose, item }: ContentDetailsPop
           </div>
 
           <DialogDescription className="text-[#718096] text-base leading-relaxed">
-            {item.description}
+            {item.description || "Nenhuma descrição disponível."}
           </DialogDescription>
         </div>
 
