@@ -46,6 +46,7 @@ export default function ProcessingPage() {
   const [isComplete, setIsComplete] = useState(false)
   const hasStarted = useRef(false)
   const discoveredContentRef = useRef<ContentItem[]>([]) // Ref para manter dados atualizados
+  const organizedTrailRef = useRef<OrganizedTrail | null>(null) // Ref para a trilha organizada
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null)
   const [isPopupOpen, setIsPopupOpen] = useState(false)
 
@@ -251,6 +252,7 @@ export default function ProcessingPage() {
             setDiscoveredContent(reorderedContent); // Atualizar discoveredContent com a nova ordem e descrições
             discoveredContentRef.current = reorderedContent; // Atualizar ref imediatamente
             setOrganizedTrail(organizedTrailData); // Manter a estrutura organizada para exibição
+            organizedTrailRef.current = organizedTrailData; // Atualizar ref
 
           } else {
             console.error("ORGANIZE STEP: API response not ok", response.status, response.statusText)
@@ -258,58 +260,67 @@ export default function ProcessingPage() {
             const approvedContent = discoveredContentRef.current.filter((item) => item.isApproved)
             setOrganizedTrail({
               organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
-            })
+            });
+            organizedTrailRef.current = {
+              organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
+            };
           }
         } catch (error) {
           console.error("ORGANIZE STEP: Error organizing content:", error)
           // Fallback: if organization fails, use approved content as a single section
           const approvedContent = discoveredContentRef.current.filter((item) => item.isApproved)
-          setOrganizedTrail({
+          const fallbackTrail = {
             organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
-          })
+          };
+          setOrganizedTrail(fallbackTrail);
+          organizedTrailRef.current = fallbackTrail;
         }
       } else if (step.id === "finalize") {
         try {
-          if (!discoveredContent || discoveredContent.length === 0) { // Usar discoveredContent
-            console.warn("FINALIZE STEP: No content to save, skipping...")
-            return
-          }
-
-          if (user) {
-            console.log("FINALIZE STEP: User logged in, saving to database...")
-            const payload = {
-              title: `Trilha de ${topic}`, // Título padrão
-              topic,
-              difficulty: "beginner", // Placeholder
-              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`, // Descrição padrão
-              organizedTrail: { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContent }] }, // Salvar o discoveredContent completo
+          if (discoveredContentRef.current && discoveredContentRef.current.length > 0) {
+            let finalOrganizedTrail = organizedTrailRef.current;
+            if (!finalOrganizedTrail) {
+              console.warn("FINALIZE STEP: organizedTrail is not set, falling back to discoveredContent.");
+              finalOrganizedTrail = { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
             }
-            const response = await fetch("/api/learning-paths/save", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            })
 
-            if (response.ok) {
-              const data = await response.json()
-              console.log("FINALIZE STEP: Learning path saved to DB:", data.learningPath)
+            if (user) {
+              console.log("FINALIZE STEP: User logged in, saving to database...")
+              const payload = {
+                title: `Trilha de ${topic}`,
+                topic,
+                difficulty: "beginner",
+                description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+                organizedTrail: finalOrganizedTrail,
+                content: discoveredContentRef.current, // Enviar o conteúdo completo
+              }
+              const response = await fetch("/api/learning-paths/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              })
+
+              if (response.ok) {
+                const data = await response.json()
+                console.log("FINALIZE STEP: Learning path saved to DB:", data.learningPath)
+              } else {
+                console.error("FINALIZE STEP: API response not ok", response.status, response.statusText)
+                console.warn("FINALIZE STEP: Falling back to local storage due to DB save failure.")
+                localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: finalOrganizedTrail }))
+              }
             } else {
-              console.error("FINALIZE STEP: API response not ok", response.status, response.statusText)
-              // Fallback to local storage if DB save fails
-              console.warn("FINALIZE STEP: Falling back to local storage due to DB save failure.")
-              localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContent }] } }))
+              console.log("FINALIZE STEP: User not logged in, saving to local storage.")
+              localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: finalOrganizedTrail }))
             }
           } else {
-            console.log("FINALIZE STEP: User not logged in, saving to local storage.")
-            localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContent }] } }))
+            console.warn("FINALIZE STEP: No content to save, skipping save logic.");
           }
         } catch (error) {
           console.error("FINALIZE STEP: Error finalizing content:", error)
           // Fallback to local storage if any error occurs
           console.warn("FINALIZE STEP: Falling back to local storage due to error.")
-          if (discoveredContent) {
-            localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContent }] } }))
-          }
+          const fallbackTrail = { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
+          localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: fallbackTrail }))
         }
       }
 
@@ -326,7 +337,7 @@ export default function ProcessingPage() {
         console.log("All steps completed!")
       }
     },
-    [steps, topic, sources, answers, organizedTrail, user, discoveredContent], // Adicionado discoveredContent às dependências
+    [steps, topic, sources, answers, user],
   )
 
   const startProcessing = useCallback(async () => {

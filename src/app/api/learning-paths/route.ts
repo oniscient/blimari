@@ -1,89 +1,32 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/src/lib/database/neon"
-import { nanoid } from "nanoid"
-import type { LearningPath, APIResponse } from "@/src/types"
+import { NextResponse } from "next/server";
+import { db } from "@/src/lib/database/neon";
+import { stackServerApp } from "@/src/stack";
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get("userId")
+    const user = await stackServerApp.getUser();
 
-    if (!userId) {
-      return NextResponse.json<APIResponse>(
-        {
-          success: false,
-          error: "User ID is required",
-        },
-        { status: 400 },
-      )
+    if (!user) {
+      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const paths = await db.getLearningPathsByUserId(userId)
+    const learningPaths = await db.getLearningPathsByUserId(user.id);
 
-    return NextResponse.json<APIResponse<LearningPath[]>>({
-      success: true,
-      data: paths,
-    })
+    return new NextResponse(JSON.stringify(learningPaths), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("Error fetching learning paths:", error)
-    return NextResponse.json<APIResponse>(
+    console.error("Error fetching learning paths:", error);
+    return new NextResponse(
+      JSON.stringify({ message: "Internal Server Error" }),
       {
-        success: false,
-        error: "Failed to fetch learning paths",
-      },
-      { status: 500 },
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { userId, title, description, topic, difficulty, estimatedDuration, culturalProfileId } = body
-
-    if (!userId || !title || !topic) {
-      return NextResponse.json<APIResponse>(
-        {
-          success: false,
-          error: "Missing required fields: userId, title, topic",
-        },
-        { status: 400 },
-      )
-    }
-
-    const pathData: Partial<LearningPath> = {
-      id: nanoid(),
-      userId,
-      title,
-      description: description || null, // Use null for optional fields
-      topic,
-      difficulty: difficulty || "beginner",
-      estimatedDuration: estimatedDuration || null,
-      culturalProfileId: culturalProfileId || null,
-      status: "draft",
-      totalContent: 0,
-      completedContent: 0,
-      progress: 0,
-    }
-
-    const newPath = await db.createLearningPath(pathData)
-
-    return NextResponse.json<APIResponse<LearningPath>>(
-      {
-        success: true,
-        data: newPath,
-        message: "Learning path created successfully",
-      },
-      { status: 201 },
-    )
-  } catch (error) {
-    console.error("Error creating learning path:", error)
-    return NextResponse.json<APIResponse>(
-      {
-        success: false,
-        error: "Failed to create learning path",
-      },
-      { status: 500 },
-    )
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

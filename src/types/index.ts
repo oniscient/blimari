@@ -8,8 +8,8 @@ export interface User {
   name: string
   passwordHash: string | null // Adicionado do seu schema Prisma
   avatarUrl?: string // Mapeado de avatar_url
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   // Relações omitidas para simplicidade nos tipos de dados brutos
 }
 
@@ -43,11 +43,12 @@ export interface LearningPath {
   estimatedDuration?: number // Mapeado de estimated_duration
   culturalProfileId?: string // Mapeado de cultural_profile_id
   status: "active" | "completed" | "paused" | "draft" | "archived" | string // Adicionado draft/archived e string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   description: string
   progress: number
   organizedTrail?: OrganizedTrail // Adicionado para armazenar a trilha organizada
+  content?: ContentItem[] // Adicionado para armazenar o conteúdo organizado
 }
 
 export interface ContentItem {
@@ -66,7 +67,7 @@ export interface ContentItem {
   type: string // Adicionado
   duration?: string // Adicionado
   isApproved?: boolean // Adicionado
-  createdAt: Date
+  createdAt: string
 
   // New fields for content discovery
   description?: string
@@ -156,6 +157,18 @@ export interface GeminiRequest {
   maxTokens?: number
 }
 
+export interface TrailSection {
+  sectionTitle: string;
+  items: {
+    id: string;
+    organizedDescription: string; // Nova descrição organizada
+  }[];
+}
+
+export interface OrganizedTrail {
+  organizedTrail: TrailSection[];
+}
+
 export interface QlooRequest {
   userId: string
   content: string
@@ -178,6 +191,3 @@ export interface TrailSection {
   }[];
 }
 
-export interface OrganizedTrail {
-  organizedTrail: TrailSection[];
-}

@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless"
+import { v4 as uuidv4 } from 'uuid'; // Importar uuid
 import type { User, LearningPath, ContentItem, QlooProfile } from "../../types"
 
 if (!process.env.DATABASE_URL) {
@@ -61,26 +62,59 @@ export const db = {
   },
 
   // Learning Paths
-  async createLearningPath(pathData: Partial<LearningPath>) {
-    const [newPath] = await sql`
-    INSERT INTO learning_paths (id, user_id, title, topic, difficulty, total_content, completed_content, estimated_duration, cultural_profile_id, status, created_at, updated_at)
-    VALUES (
-      ${pathData.id},
-      ${pathData.userId},
-      ${pathData.title},
-      ${pathData.topic},
-      ${pathData.difficulty || "beginner"},
-      ${pathData.totalContent || 0},
-      ${pathData.completedContent || 0},
-      ${pathData.estimatedDuration || null},
-      ${pathData.culturalProfileId || null},
-      ${pathData.status || "draft"},
-      NOW(),
-      NOW()
-    )
-    RETURNING id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt"
-  `
-    return newPath as LearningPath
+  async createLearningPath(pathData: Partial<LearningPath> & { content?: ContentItem[] }) {
+    const newId = pathData.id || uuidv4();
+    const contentItems = pathData.content || [];
+
+    const results = await sql.transaction((tx) => {
+      const queries = [];
+
+      const pathQuery = tx`
+        INSERT INTO learning_paths (id, user_id, title, topic, difficulty, total_content, completed_content, estimated_duration, cultural_profile_id, status, created_at, updated_at)
+        VALUES (
+          ${newId},
+          ${pathData.userId},
+          ${pathData.title},
+          ${pathData.topic},
+          ${pathData.difficulty || "beginner"},
+          ${pathData.totalContent || 0},
+          ${pathData.completedContent || 0},
+          ${pathData.estimatedDuration || null},
+          ${pathData.culturalProfileId || null},
+          ${pathData.status || "draft"},
+          NOW(),
+          NOW()
+        )
+        RETURNING id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt"
+      `;
+      queries.push(pathQuery);
+
+      if (contentItems.length > 0) {
+        for (let i = 0; i < contentItems.length; i++) {
+          const item = contentItems[i];
+          const contentQuery = tx`
+            INSERT INTO path_content (id, path_id, title, url, content_type, duration_minutes, order_index, is_completed, source, created_at)
+            VALUES (
+              ${item.id || uuidv4()},
+              ${newId},
+              ${item.title},
+              ${item.url},
+              ${item.contentType || item.type},
+              ${item.durationMinutes || null},
+              ${i},
+              false,
+              ${item.source},
+              NOW()
+            )
+          `;
+          queries.push(contentQuery);
+        }
+      }
+      
+      return queries;
+    });
+
+    return results[0][0] as LearningPath;
   },
 
   async getLearningPathsByUserId(userId: string) {
@@ -147,5 +181,63 @@ export const db = {
     RETURNING id, path_id as "pathId", title, url, content_type as "contentType", duration_minutes as "durationMinutes", order_index as "orderIndex", is_completed as "isCompleted", completed_at as "completedAt", cultural_enhancements as "culturalEnhancements", source, created_at as "createdAt"
   `
     return updatedItem as ContentItem
+  },
+
+  async getLearningPathById(id: string) {
+    const result = await sql`
+      SELECT
+        lp.id, lp.user_id as "userId", lp.title, lp.topic, lp.difficulty, lp.total_content as "totalContent", lp.completed_content as "completedContent", lp.estimated_duration as "estimatedDuration", lp.cultural_profile_id as "culturalProfileId", lp.status, lp.created_at as "createdAt", lp.updated_at as "updatedAt",
+        pc.id as content_id, pc.path_id as content_path_id, pc.title as content_title, pc.url as content_url, pc.content_type as content_type, pc.duration_minutes as content_duration_minutes, pc.order_index as content_order_index, pc.is_completed as content_is_completed, pc.completed_at as content_completed_at, pc.cultural_enhancements as content_cultural_enhancements, pc.source as content_source, pc.created_at as content_created_at
+      FROM learning_paths lp
+      LEFT JOIN path_content pc ON lp.id = pc.path_id
+      WHERE lp.id = ${id}
+      ORDER BY pc.order_index ASC
+    `;
+
+    if (result.length === 0) {
+      return undefined;
+    }
+
+    const learningPath: LearningPath = {
+      id: result[0].id,
+      userId: result[0].userId,
+      title: result[0].title,
+      topic: result[0].topic,
+      difficulty: result[0].difficulty,
+      totalContent: result[0].totalContent,
+      completedContent: result[0].completedContent,
+      estimatedDuration: result[0].estimatedDuration,
+      culturalProfileId: result[0].culturalProfileId,
+      status: result[0].status,
+      createdAt: result[0].createdAt,
+      updatedAt: result[0].updatedAt,
+      description: result[0].description || '', // Assuming description is a string, default to empty
+      progress: result[0].progress || 0, // Assuming progress is a number, default to 0
+      content: [],
+    };
+
+    result.forEach((row: any) => {
+      if (row.content_id) {
+        learningPath.content?.push({
+          id: row.content_id,
+          pathId: row.content_path_id,
+          title: row.content_title,
+          url: row.content_url,
+          contentType: row.content_type,
+          durationMinutes: row.content_duration_minutes,
+          orderIndex: row.content_order_index,
+          isCompleted: row.content_is_completed,
+          completedAt: row.content_completed_at,
+          culturalEnhancements: row.content_cultural_enhancements,
+          source: row.content_source,
+          createdAt: row.content_created_at,
+          type: row.content_type, // Assuming content_type can also be used for 'type'
+          culturalScore: row.content_cultural_score || 0, // Default to 0 if not in query
+          qualityScore: row.content_quality_score || 0, // Default to 0 if not in query
+        });
+      }
+    });
+
+    return learningPath;
   },
 }

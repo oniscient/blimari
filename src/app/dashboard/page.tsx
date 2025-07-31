@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUser } from "@stackframe/stack";
@@ -37,100 +37,83 @@ import { Input } from "@/src/components/ui/input";
 import { LearningPath, OrganizedTrail } from "@/src/types"; // Importar tipos
 
 // Mock Data
-const mockLearningModules = [
-  {
-    id: "1",
-    icon: Youtube,
-    title: "Introdução ao Next.js",
-    type: "Vídeo",
-    status: "Concluído",
-    progress: 100,
-  },
-  {
-    id: "2",
-    icon: Book,
-    title: "Fundamentos de Tailwind CSS",
-    type: "Artigo",
-    status: "Em Andamento",
-    progress: 60,
-  },
-  {
-    id: "3",
-    icon: Code,
-    title: "Desenvolvimento de APIs com Node.js",
-    type: "Curso",
-    status: "A Fazer",
-    progress: 0,
-  },
-  {
-    id: "4",
-    icon: Github,
-    title: "Controle de Versão com Git e GitHub",
-    type: "Repositório",
-    status: "Concluído",
-    progress: 100,
-  },
-  {
-    id: "5",
-    icon: Globe,
-    title: "Design Responsivo na Prática",
-    type: "Tutorial",
-    status: "Em Andamento",
-    progress: 30,
-  },
-];
 
-const mockRecentActivity = [
-  {
-    id: "1",
-    icon: Clock,
-    description: "Visualizou 'Introdução ao Next.js'",
-    timestamp: "2 horas atrás",
-  },
-  {
-    id: "2",
-    icon: Award,
-    description: "Completou o quiz de 'Fundamentos de Tailwind CSS'",
-    timestamp: "1 dia atrás",
-  },
-  {
-    id: "3",
-    icon: PlusCircle,
-    description: "Adicionou 'Desenvolvimento de APIs' à sua trilha",
-    timestamp: "3 dias atrás",
-  },
-  {
-    id: "4",
-    icon: Star,
-    description: "Maratonou 'Design Responsivo na Prática'",
-    timestamp: "1 semana atrás",
-  },
-];
 
-const mockRecommendedContent = [
-  {
-    id: "1",
-    title: "Trilha de Backend com Python",
-    description: "Explore o mundo do desenvolvimento backend com Python e Django.",
-    image: "/placeholder.jpg", // Placeholder image
-  },
-  {
-    id: "2",
-    title: "Introdução à Ciência de Dados",
-    description: "Comece sua jornada em análise de dados e machine learning.",
-    image: "/placeholder.jpg", // Placeholder image
-  },
-  {
-    id: "3",
-    title: "Dominando React Native",
-    description: "Crie aplicativos móveis nativos com JavaScript e React.",
-    image: "/placeholder.jpg", // Placeholder image
-  },
-];
 
 export default function DashboardPage() {
   const user = useUser({ or: "redirect" });
-  const [progress, setProgress] = useState(75); // Example progress
+  const [progress, setProgress] = useState(0);
+  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
+  const [loadingLearningPaths, setLoadingLearningPaths] = useState(true);
+
+  const fetchLearningPaths = useCallback(async () => {
+    if (!user) return;
+
+    setLoadingLearningPaths(true);
+    try {
+      const res = await fetch("/api/learning-paths");
+      if (res.ok) {
+        const data: LearningPath[] = await res.json();
+        setLearningPaths(data);
+      } else {
+        console.error("Failed to fetch learning paths:", res.status, res.statusText);
+        // Fallback to localStorage if API fails
+        const localLearningPath = localStorage.getItem("localLearningPath");
+        if (localLearningPath) {
+          try {
+            const { topic, organizedTrail } = JSON.parse(localLearningPath);
+            setLearningPaths([{
+              id: "local-path",
+              title: `Trilha de ${topic}`,
+              topic,
+              difficulty: "beginner",
+              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+              organizedTrail,
+              userId: user.id,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              totalContent: organizedTrail?.organizedTrail.reduce((acc: number, section: OrganizedTrail["organizedTrail"][0]) => acc + section.items.length, 0) || 0,
+              completedContent: 0, // Default to 0 for local paths
+              status: "active", // Default status
+              progress: 0, // Default progress
+            }]);
+          } catch (error) {
+            console.error("Error parsing local learning path from localStorage:", error);
+            localStorage.removeItem("localLearningPath");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching learning paths:", error);
+      // Fallback to localStorage if API fails
+      const localLearningPath = localStorage.getItem("localLearningPath");
+      if (localLearningPath) {
+        try {
+          const { topic, organizedTrail } = JSON.parse(localLearningPath);
+          setLearningPaths([{
+            id: "local-path",
+            title: `Trilha de ${topic}`,
+            topic,
+            difficulty: "beginner",
+            description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+            organizedTrail,
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            totalContent: organizedTrail?.organizedTrail.reduce((acc: number, section: OrganizedTrail["organizedTrail"][0]) => acc + section.items.length, 0) || 0,
+            completedContent: 0, // Default to 0 for local paths
+            status: "active", // Default status
+            progress: 0, // Default progress
+          }]);
+        } catch (error) {
+          console.error("Error parsing local learning path from localStorage:", error);
+          localStorage.removeItem("localLearningPath");
+        }
+      }
+    } finally {
+      setLoadingLearningPaths(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -171,6 +154,7 @@ export default function DashboardPage() {
               if (res.ok) {
                 console.log("Local learning path successfully saved to DB.");
                 localStorage.removeItem("localLearningPath"); // Remover após salvar
+                fetchLearningPaths(); // Re-fetch learning paths after saving local one
               } else {
                 console.error("Failed to save local learning path to DB:", res.status, res.statusText);
               }
@@ -183,8 +167,10 @@ export default function DashboardPage() {
           localStorage.removeItem("localLearningPath"); // Limpar dados corrompidos
         }
       }
+
+      fetchLearningPaths(); // Initial fetch of learning paths
     }
-  }, [user]);
+  }, [user, fetchLearningPaths]);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -281,41 +267,54 @@ export default function DashboardPage() {
         <section className="mt-8">
           <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Módulos de Aprendizado</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-            {mockLearningModules.map((module) => (
-              <Card
-                key={module.id}
-                className="rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 border border-[#E2E8F0] bg-white"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-[#A0ADB8]">
-                      <module.icon className="h-6 w-6" />
+            {loadingLearningPaths ? (
+              <div className="col-span-full flex justify-center items-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35]" />
+                <p className="ml-2 text-[#718096]">Carregando trilhas de aprendizado...</p>
+              </div>
+            ) : learningPaths.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-[#718096]">
+                <p>Nenhuma trilha de aprendizado encontrada. Comece a criar uma nova!</p>
+                <Link href="/create/sources" className="text-[#FF6B35] hover:underline mt-2 block">
+                  Criar Nova Trilha
+                </Link>
+              </div>
+            ) : (
+              learningPaths.map((path) => (
+                <Card key={path.id} className="rounded-2xl shadow-md border border-[#E2E8F0] bg-white">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold text-[#2D3748]">{path.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-[#718096]">
+                      <BookOpen className="w-4 h-4" />
+                      <span>Tópico: {path.topic}</span>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-[#2D3748] text-lg">
-                        {module.title}
-                      </h3>
-                      <p className="text-sm text-[#718096]">
-                        {module.type}
-                      </p>
+                    <div className="flex items-center gap-2 text-sm text-[#718096]">
+                      <Award className="w-4 h-4" />
+                      <span>Dificuldade: {path.difficulty}</span>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <Badge className={getStatusBadgeClass(module.status)}>
-                      {module.status}
-                    </Badge>
-                    <Button variant="outline" className="rounded-lg text-[#718096]">
-                      {module.status === "Concluído"
-                        ? "Review"
-                        : module.status === "Em Andamento"
-                        ? "Continue"
-                        : "Start"}
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex items-center gap-2 text-sm text-[#718096]">
+                      <Activity className="w-4 h-4" />
+                      <span>Status: <Badge className={getStatusBadgeClass(path.status)}>{path.status}</Badge></span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-[#718096]">Progresso:</p>
+                      <Progress
+                        value={path.progress}
+                        className="h-2 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
+                      />
+                      <span className="text-xs text-[#718096]">{path.progress}% Concluído</span>
+                    </div>
+                    <Link href={`/learning-paths/${path.id}`} passHref>
+                      <Button className="w-full bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200">
+                        Ver Trilha <ChevronRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </section>
 
@@ -324,17 +323,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Atividade Recente</h2>
           <Card className="rounded-2xl shadow-md border border-[#E2E8F0] bg-white">
             <CardContent className="p-6 space-y-4">
-              {mockRecentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-[#A0ADB8]">
-                    <activity.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[#718096]">{activity.description}</p>
-                    <p className="text-xs text-[#A0ADB8]">{activity.timestamp}</p>
-                  </div>
-                </div>
-              ))}
+              {/* Recent activity will be dynamically loaded */}
             </CardContent>
           </Card>
         </section>
@@ -343,31 +332,7 @@ export default function DashboardPage() {
         <section className="mt-8">
           <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Conteúdo Recomendado</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-            {mockRecommendedContent.map((content) => (
-              <Card
-                key={content.id}
-                className="rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 border border-[#E2E8F0] bg-white"
-              >
-                <CardContent className="p-4">
-                  <Image
-                    src={content.image}
-                    alt={content.title}
-                    width={400}
-                    height={200}
-                    className="rounded-xl mb-4 object-cover w-full h-40"
-                  />
-                  <h3 className="font-bold text-[#2D3748] text-lg mb-2">
-                    {content.title}
-                  </h3>
-                  <p className="text-sm text-[#718096] mb-4">
-                    {content.description}
-                  </p>
-                  <Button className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200 w-full">
-                    Explore
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Recommended content will be dynamically loaded */}
           </div>
         </section>
       </main>

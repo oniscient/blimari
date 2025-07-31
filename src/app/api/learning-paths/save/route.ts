@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, topic, difficulty, description, organizedTrail } = await request.json()
+    const { title, topic, difficulty, description, organizedTrail, content } = await request.json()
 
-    if (!title || !topic || !difficulty || !description || !organizedTrail) {
+    if (!title || !topic || !difficulty || !description || !organizedTrail || !content) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
@@ -23,11 +23,12 @@ export async function POST(request: NextRequest) {
       topic,
       difficulty,
       description,
-      totalContent: organizedTrail.organizedTrail.reduce((acc: number, section: TrailSection) => acc + section.items.length, 0),
+      totalContent: content.length,
       completedContent: 0,
       progress: 0,
       status: "active",
       organizedTrail: organizedTrail,
+      content: content,
     })
 
     return NextResponse.json({
