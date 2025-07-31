@@ -66,7 +66,7 @@ blimari/
 -   🎯 **Quizzes Adaptativos**: Validação de conhecimento
 -   📱 **Design Responsivo**: Mobile-first, minimalista
 
-## 🎨 Design System
+## 🎨 Design System 
 
 O projeto segue um design system baseado nos princípios de Dieter Rams:
 -   **Minimalismo**: "Good design is as little design as possible"
