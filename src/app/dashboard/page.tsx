@@ -123,61 +123,9 @@ export default function DashboardPage() {
       if (res.ok) {
         const data: LearningPath[] = await res.json();
         setLearningPaths(data);
-      } else {
-        console.error("Failed to fetch learning paths:", res.status, res.statusText);
-        // Fallback to localStorage if API fails
-        const localLearningPath = localStorage.getItem("localLearningPath");
-        if (localLearningPath) {
-          try {
-            const { topic, organizedTrail } = JSON.parse(localLearningPath);
-            setLearningPaths([{
-              id: "local-path",
-              title: `Trilha de ${topic}`,
-              topic,
-              difficulty: "beginner",
-              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
-              organizedTrail,
-              userId: user.id,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              totalContent: organizedTrail?.organizedTrail.reduce((acc: number, section: OrganizedTrail["organizedTrail"][0]) => acc + section.items.length, 0) || 0,
-              completedContent: 0, // Default to 0 for local paths
-              status: "active", // Default status
-              progress: 0, // Default progress
-            }]);
-          } catch (error) {
-            console.error("Error parsing local learning path from localStorage:", error);
-            localStorage.removeItem("localLearningPath");
-          }
-        }
       }
     } catch (error) {
       console.error("Error fetching learning paths:", error);
-      // Fallback to localStorage if API fails
-      const localLearningPath = localStorage.getItem("localLearningPath");
-      if (localLearningPath) {
-        try {
-          const { topic, organizedTrail } = JSON.parse(localLearningPath);
-          setLearningPaths([{
-            id: "local-path",
-            title: `Trilha de ${topic}`,
-            topic,
-            difficulty: "beginner",
-            description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
-            organizedTrail,
-            userId: user.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            totalContent: organizedTrail?.organizedTrail.reduce((acc: number, section: OrganizedTrail["organizedTrail"][0]) => acc + section.items.length, 0) || 0,
-            completedContent: 0, // Default to 0 for local paths
-            status: "active", // Default status
-            progress: 0, // Default progress
-          }]);
-        } catch (error) {
-          console.error("Error parsing local learning path from localStorage:", error);
-          localStorage.removeItem("localLearningPath");
-        }
-      }
     } finally {
       setLoadingLearningPaths(false);
     }
@@ -199,42 +147,6 @@ export default function DashboardPage() {
         .catch(error => {
           console.error('Erro na sincronização:', error);
         });
-
-      // Verificar e sincronizar trilhas de aprendizado do localStorage
-      const localLearningPath = localStorage.getItem("localLearningPath");
-      if (localLearningPath) {
-        try {
-          const { topic, organizedTrail } = JSON.parse(localLearningPath);
-          console.log("Found local learning path, attempting to save to DB:", { topic, organizedTrail });
-
-          fetch("/api/learning-paths/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: `Trilha de ${topic}`,
-              topic,
-              difficulty: "beginner", // Placeholder
-              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
-              organizedTrail,
-            }),
-          })
-            .then((res) => {
-              if (res.ok) {
-                console.log("Local learning path successfully saved to DB.");
-                localStorage.removeItem("localLearningPath"); // Remover após salvar
-                fetchLearningPaths(); // Re-fetch learning paths after saving local one
-              } else {
-                console.error("Failed to save local learning path to DB:", res.status, res.statusText);
-              }
-            })
-            .catch((error) => {
-              console.error("Error saving local learning path to DB:", error);
-            });
-        } catch (error) {
-          console.error("Error parsing local learning path from localStorage:", error);
-          localStorage.removeItem("localLearningPath"); // Limpar dados corrompidos
-        }
-      }
 
       fetchLearningPaths(); // Initial fetch of learning paths
     }

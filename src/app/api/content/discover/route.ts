@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       limit: 10,
     })
 
-    console.log("API /api/content/discover: Discovered content:", discoveredContent)
+    //console.log("API /api/content/discover: Discovered content:", discoveredContent)
 
     return NextResponse.json({
       success: true,

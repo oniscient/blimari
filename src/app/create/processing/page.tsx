@@ -140,7 +140,7 @@ export default function ProcessingPage() {
           const response = await fetch("/api/content/discover", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ topic, sources, answers }),
+            body: JSON.stringify({ topic, sources, answers, userId: user?.id }),
           })
 
           if (response.ok) {
@@ -285,43 +285,34 @@ export default function ProcessingPage() {
               finalOrganizedTrail = { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
             }
 
-            if (user) {
-              console.log("FINALIZE STEP: User logged in, saving to database...")
-              const payload = {
-                title: `Trilha de ${topic}`,
-                topic,
-                difficulty: "beginner",
-                description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
-                organizedTrail: finalOrganizedTrail,
-                content: discoveredContentRef.current, // Enviar o conteúdo completo
-              }
-              const response = await fetch("/api/learning-paths/save", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              })
+            console.log("FINALIZE STEP: User logged in, saving to database...")
+            const payload = {
+              title: `Trilha de ${topic}`,
+              topic,
+              difficulty: "beginner",
+              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+              organizedTrail: finalOrganizedTrail,
+              content: discoveredContentRef.current, // Enviar o conteúdo completo
+            }
+            const response = await fetch("/api/learning-paths/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
 
-              if (response.ok) {
-                const data = await response.json()
-                console.log("FINALIZE STEP: Learning path saved to DB:", data.learningPath)
-              } else {
-                console.error("FINALIZE STEP: API response not ok", response.status, response.statusText)
-                console.warn("FINALIZE STEP: Falling back to local storage due to DB save failure.")
-                localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: finalOrganizedTrail }))
-              }
+            if (response.ok) {
+              const data = await response.json()
+              console.log("FINALIZE STEP: Learning path saved to DB:", data.learningPath)
             } else {
-              console.log("FINALIZE STEP: User not logged in, saving to local storage.")
-              localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: finalOrganizedTrail }))
+              console.error("FINALIZE STEP: API response not ok", response.status, response.statusText)
+              // Do not fallback to local storage, as per requirements
             }
           } else {
             console.warn("FINALIZE STEP: No content to save, skipping save logic.");
           }
         } catch (error) {
           console.error("FINALIZE STEP: Error finalizing content:", error)
-          // Fallback to local storage if any error occurs
-          console.warn("FINALIZE STEP: Falling back to local storage due to error.")
-          const fallbackTrail = { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
-          localStorage.setItem("localLearningPath", JSON.stringify({ topic, organizedTrail: fallbackTrail }))
+          // Do not fallback to local storage, as per requirements
         }
       }
 
@@ -443,14 +434,12 @@ export default function ProcessingPage() {
                 </div>
                 <p className="text-green-700 mb-4">
                   Sua trilha personalizada de <strong>{topic}</strong> está pronta.
-                  {!user && " Faça login para salvar e acessar seu dashboard."}
                 </p>
                 <Button
                   onClick={handleContinue}
                   className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white px-6 py-3 rounded-full font-medium transition-colors duration-200"
                 >
-                  {user ? "Continuar para o Dashboard" : "Fazer Login e Continuar"}
-                  {!user && <LogIn className="ml-2 h-4 w-4" />}
+                  Continuar para o Dashboard
                 </Button>
               </motion.div>
             )}

@@ -45,21 +45,36 @@ export const db = {
     return user as User | undefined
   },
 
-  // Cultural Profiles (mapped from cultural_profiles)
-  async createCulturalProfile(profileData: Partial<QlooProfile>) {
-    const [profile] = await sql`
-    INSERT INTO cultural_profiles (id, user_id, qloo_taste_id, preferences, communication_style, last_sync_at, created_at)
-    VALUES (${profileData.id}, ${profileData.userId}, ${profileData.qlooTasteId || null}, ${JSON.stringify(profileData.preferences || {})}, ${JSON.stringify(profileData.communicationStyle || {})}, NOW(), NOW())
-    RETURNING id, user_id as "userId", qloo_taste_id as "qlooTasteId", preferences, communication_style as "communicationStyle", last_sync_at as "lastSyncAt", created_at as "createdAt"
-  `
-    return profile as QlooProfile
+  async updateUser(id: string, updateData: Partial<User>) {
+    const [updatedUser] = await sql`
+      UPDATE users
+      SET
+        id = COALESCE(${updateData.id}, id),
+        email = COALESCE(${updateData.email}, email),
+        name = COALESCE(${updateData.name}, name),
+        avatar_url = COALESCE(${updateData.avatarUrl || null}, avatar_url),
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING id, email, name, avatar_url as "avatarUrl", created_at as "createdAt", updated_at as "updatedAt"
+    `;
+    return updatedUser as User;
   },
-
-  async getCulturalProfileByUserId(userId: string) {
-    const [profile] =
-      await sql`SELECT id, user_id as "userId", qloo_taste_id as "qlooTasteId", preferences, communication_style as "communicationStyle", last_sync_at as "lastSyncAt", created_at as "createdAt" FROM cultural_profiles WHERE user_id = ${userId}`
-    return profile as QlooProfile | undefined
-  },
+ 
+   // Cultural Profiles (mapped from cultural_profiles)
+   async createCulturalProfile(profileData: Partial<QlooProfile>) {
+     const [profile] = await sql`
+     INSERT INTO cultural_profiles (id, user_id, qloo_taste_id, preferences, communication_style, last_sync_at, created_at)
+     VALUES (${profileData.id}, ${profileData.userId}, ${profileData.qlooTasteId || null}, ${JSON.stringify(profileData.preferences || {})}, ${JSON.stringify(profileData.communicationStyle || {})}, NOW(), NOW())
+     RETURNING id, user_id as "userId", qloo_taste_id as "qlooTasteId", preferences, communication_style as "communicationStyle", last_sync_at as "lastSyncAt", created_at as "createdAt"
+   `
+     return profile as QlooProfile
+   },
+ 
+   async getCulturalProfileByUserId(userId: string) {
+     const [profile] =
+       await sql`SELECT id, user_id as "userId", qloo_taste_id as "qlooTasteId", preferences, communication_style as "communicationStyle", last_sync_at as "lastSyncAt", created_at as "createdAt" FROM cultural_profiles WHERE user_id = ${userId}`
+     return profile as QlooProfile | undefined
+   },
 
   // Learning Paths
   async createLearningPath(pathData: Partial<LearningPath> & { content?: ContentItem[] }) {

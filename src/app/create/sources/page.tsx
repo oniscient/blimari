@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
+import { useUser } from "@stackframe/stack"
 import {
   Youtube,
   Github,
@@ -74,6 +75,7 @@ const sources: Source[] = [
 export default function SourcesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const user = useUser()
   const [topic, setTopic] = useState<string>("")
   const [answers, setAnswers] = useState<string[]>([])
   const [selectedSources, setSelectedSources] = useState<string[]>([])
@@ -179,7 +181,12 @@ export default function SourcesPage() {
       sources: JSON.stringify(selectedSources),
     })
 
-    router.push(`/create/processing?${params.toString()}`)
+    if (!user) {
+      const redirectUrl = `/create/processing?${params.toString()}`
+      router.push(`/handler/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`)
+    } else {
+      router.push(`/create/processing?${params.toString()}`)
+    }
   }
 
   const handleBack = () => {
