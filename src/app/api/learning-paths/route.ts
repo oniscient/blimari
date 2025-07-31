@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/database/neon"
+import { db } from "@/src/lib/database/neon"
 import { nanoid } from "nanoid"
-import type { LearningPath, APIResponse } from "@/types"
+import type { LearningPath, APIResponse } from "@/src/types"
 
 export async function GET(request: NextRequest) {
   try {

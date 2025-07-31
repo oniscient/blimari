@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless"
-import type { User, LearningPath, ContentItem, QlooProfile } from "@/types"
+import type { User, LearningPath, ContentItem, QlooProfile } from "../../types"
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set")
@@ -23,7 +23,7 @@ export async function testConnection() {
 // Helper functions for common queries, adjusted to your Prisma schema's table/column names
 export const db = {
   // Users
-  async createUser(userData: Partial<User> & { passwordHash: string }) {
+  async createUser(userData: Partial<User> & { passwordHash: string | null }) {
     const [user] = await sql`
     INSERT INTO users (id, email, name, "passwordHash", avatar_url, created_at, updated_at)
     VALUES (${userData.id}, ${userData.email}, ${userData.name}, ${userData.passwordHash}, ${userData.avatarUrl || null}, NOW(), NOW())

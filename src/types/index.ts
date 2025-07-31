@@ -6,7 +6,7 @@ export interface User {
   id: string
   email: string
   name: string
-  passwordHash: string // Adicionado do seu schema Prisma
+  passwordHash: string | null // Adicionado do seu schema Prisma
   avatarUrl?: string // Mapeado de avatar_url
   createdAt: Date
   updatedAt: Date
@@ -45,6 +45,8 @@ export interface LearningPath {
   status: "active" | "completed" | "paused" | "draft" | "archived" | string // Adicionado draft/archived e string
   createdAt: Date
   updatedAt: Date
+  description: string
+  progress: number
 }
 
 export interface ContentItem {

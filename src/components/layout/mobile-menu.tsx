@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { UserButton } from "@stackframe/stack"
 import { Home, PlusCircle, LayoutDashboard, BookOpen, HelpCircle, Info, Lock } from "lucide-react"
-import AnimatedHamburger from "../../../components/ui/AnimatedHamburger"
+import AnimatedHamburger from "../ui/AnimatedHamburger"
 import Link from "next/link"
 
 export function MobileMenu() {
@@ -72,7 +73,8 @@ export function MobileMenu() {
             transition={{ type: "tween", duration: 0.3 }}
             className="fixed inset-y-0 right-0 w-64 bg-white shadow-lg p-6 flex flex-col border-l border-[#E2E8F0]"
           >
-            <div className="flex justify-end mb-8">
+            <div className="flex justify-between items-center mb-8">
+              <UserButton />
               <button
                 onClick={toggleMenu}
                 className="p-2 rounded-md text-[#2D3748] hover:bg-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
