@@ -181,7 +181,8 @@ export interface ContentDiscoveryRequest {
   topic: string
   difficulty: string
   contentTypes: ContentType[]
-  culturalProfile: QlooProfile
+  culturalProfile?: QlooProfile // Made optional as it might be fetched
+  userId?: string // Added userId
   limit: number
 }
 

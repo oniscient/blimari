@@ -1,8 +1,10 @@
-import type { ContentItem, ContentDiscoveryRequest, ContentType } from "@/src/types"
+import type { ContentItem, ContentDiscoveryRequest, ContentType, QlooProfile } from "@/src/types"
+import { qlooService } from "@/src/services/qloo.service"
+import { db } from "@/src/lib/database/neon" // Assuming db is needed to fetch QlooProfile
 
 export class ContentDiscoveryService {
   static async discoverContent(request: ContentDiscoveryRequest): Promise<ContentItem[]> {
-    const { topic, difficulty, contentTypes, culturalProfile, limit } = request
+    const { topic, difficulty, contentTypes, userId, limit } = request // Added userId to request
 
     const discoveredContent: ContentItem[] = []
 
@@ -24,8 +26,14 @@ export class ContentDiscoveryService {
       discoveredContent.push(...githubContent)
     }
 
-    // Score content based on cultural relevance
-    const scoredContent = await this.scoreContentCulturally(discoveredContent, culturalProfile)
+    let userQlooProfile: QlooProfile | undefined
+
+    if (userId) {
+      userQlooProfile = await db.getCulturalProfileByUserId(userId)
+    }
+
+    // Score content based on cultural relevance using Qloo
+    const scoredContent = await this.scoreContentCulturally(discoveredContent, userQlooProfile)
 
     // Sort by combined quality and cultural score
     return scoredContent
@@ -66,7 +74,7 @@ export class ContentDiscoveryService {
         url: `https://www.youtube.com/watch?v=${item.id}`,
         duration: this.parseYouTubeDuration(item.contentDetails.duration),
         difficulty: this.parseDifficulty(difficulty),
-        culturalScore: 0,
+        culturalScore: 0, // Will be updated by Qloo
         qualityScore: this.calculateYouTubeQuality(item.statistics),
         metadata: {
           channelTitle: item.snippet.channelTitle,
@@ -115,7 +123,7 @@ export class ContentDiscoveryService {
             url: item.link,
             duration: this.estimateReadingTime(fullDescription || item.snippet),
             difficulty: this.parseDifficulty(difficulty),
-            culturalScore: 0,
+            culturalScore: 0, // Will be updated by Qloo
             qualityScore: this.calculateArticleQuality(item, fullDescription),
             metadata: {
               displayLink: item.displayLink,
@@ -170,7 +178,7 @@ export class ContentDiscoveryService {
             url: item.html_url,
             duration: this.estimateReadingTime(readmeContent || item.description || ""),
             difficulty: this.parseDifficulty(difficulty),
-            culturalScore: 0,
+            culturalScore: 0, // Will be updated by Qloo
             qualityScore: this.calculateGitHubQuality(item),
             metadata: {
               fullName: item.full_name,
@@ -323,12 +331,32 @@ export class ContentDiscoveryService {
     return Math.min(score, 1)
   }
 
-  private static async scoreContentCulturally(content: ContentItem[], culturalProfile: any): Promise<ContentItem[]> {
-    // Integrate with Qloo API or implement cultural scoring logic
-    return content.map((item) => ({
-      ...item,
-      culturalScore: Math.random() * 0.5 + 0.5, // Placeholder: 0.5-1.0
-    }))
+  private static async scoreContentCulturally(content: ContentItem[], culturalProfile?: QlooProfile): Promise<ContentItem[]> {
+    if (!culturalProfile || !culturalProfile.qlooTasteId) {
+      console.warn("No Qloo profile or taste ID available for cultural scoring. Skipping Qloo integration.")
+      return content.map((item) => ({
+        ...item,
+        culturalScore: 0.5, // Default to a neutral score
+      }))
+    }
+
+    const scoredContentPromises = content.map(async (item) => {
+      try {
+        const culturalScore = await qlooService.getCulturalScore(item.metadata, culturalProfile.qlooTasteId)
+        return {
+          ...item,
+          culturalScore,
+        }
+      } catch (error) {
+        console.error(`Error scoring content culturally for item ${item.id}:`, error)
+        return {
+          ...item,
+          culturalScore: 0.5, // Fallback to a neutral score on error
+        }
+      }
+    })
+
+    return Promise.all(scoredContentPromises)
   }
 
   private static parseDifficulty(difficulty: string): number {

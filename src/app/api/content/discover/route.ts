@@ -4,9 +4,9 @@ import { ContentType } from "@/src/types"
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic, sources, answers } = await request.json()
+    const { topic, sources, answers, userId } = await request.json() // Added userId
 
-    if (!topic || !sources || !Array.isArray(sources)) {
+    if (!topic || !sources || !Array.isArray(sources) || !userId) { // userId is now required
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
@@ -31,14 +31,7 @@ export async function POST(request: NextRequest) {
       topic,
       difficulty: "beginner", // Placeholder
       contentTypes,
-      culturalProfile: {
-        id: "placeholder-id",
-        userId: "placeholder-user-id",
-        preferences: {},
-        communicationStyle: {},
-        lastSyncAt: new Date(),
-        createdAt: new Date(),
-      },
+      userId, // Pass userId to the service
       limit: 10,
     })
 
@@ -50,6 +43,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error discovering content:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Internal server error during content discovery" }, { status: 500 })
   }
 }
