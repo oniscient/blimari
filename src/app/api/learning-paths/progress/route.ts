@@ -22,19 +22,22 @@ export async function POST(req: Request) {
     const contentItems = await db.getContentItemsByPathId(learningPathId)
     const totalContent = contentItems.length
     const completedContent = contentItems.filter(item => item.isCompleted).length
-    const progress = totalContent > 0 ? (completedContent / totalContent) * 100 : 0
+    const progress = totalContent > 0 ? Math.round((completedContent / totalContent) * 100) : 0
 
     // 3. Update the learning path with the new progress
-    const updatedLearningPath = await db.updateLearningPathProgress(
+    await db.updateLearningPathProgress(
       learningPathId,
       progress,
       completedContent
     )
 
+    // 4. Fetch the full, updated learning path to return to the client
+    const fullLearningPath = await db.getLearningPathById(learningPathId);
+
     return NextResponse.json({
       success: true,
       message: "Progress updated successfully.",
-      data: updatedLearningPath,
+      data: fullLearningPath,
     })
   } catch (error: any) {
     if (error.message === "Unauthenticated") {

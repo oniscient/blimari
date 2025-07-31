@@ -9,7 +9,8 @@ import { Skeleton } from '@/src/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/src/components/ui/alert';
 import { Button } from '@/src/components/ui/button';
 import { Checkbox } from '@/src/components/ui/checkbox';
-import { CheckCircle2, Circle, PlayCircle, Terminal, Loader2, ArrowLeft, Sparkles, BookOpen, Youtube, Github, Globe } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/src/components/ui/collapsible';
+import { CheckCircle2, Circle, PlayCircle, Terminal, Loader2, ArrowLeft, Sparkles, BookOpen, Youtube, Github, Globe, ArrowRight, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -106,6 +107,119 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
     }
   };
 
+  // Component for a single collapsible module card
+  interface ModuleCardProps {
+    section: TrailSection;
+    findContentItem: (itemId: string) => ContentItem | undefined;
+    learningPathId: string;
+    handleProgressChange: (contentId: string, isCompleted: boolean) => Promise<void>;
+    updatingContent: string | null;
+    getContentTypeIcon: (contentType: string) => React.ReactNode;
+  }
+
+  const ModuleCard: React.FC<ModuleCardProps> = ({
+    section,
+    findContentItem,
+    learningPathId,
+    handleProgressChange,
+    updatingContent,
+    getContentTypeIcon,
+  }) => {
+    const isSectionCompleted = section.items.every(item => findContentItem(item.id)?.isCompleted);
+    const [isOpen, setIsOpen] = useState(!isSectionCompleted); // Local state for collapsibility
+
+    // Effect to update isOpen when isSectionCompleted changes
+    useEffect(() => {
+      setIsOpen(!isSectionCompleted);
+    }, [isSectionCompleted]);
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className={`rounded-xl border transition-all duration-300 ${isSectionCompleted ? 'border-green-300 bg-green-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'}`}>
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-800">{section.sectionTitle}</h2>
+                  {isSectionCompleted && (
+                    <Badge variant="secondary" className="bg-green-200 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                      Concluído
+                    </Badge>
+                  )}
+                </div>
+                <ChevronDown className="h-5 w-5 text-gray-600 transition-transform duration-200 data-[state=open]:rotate-180" />
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="p-5 pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {section.items.map((item: { id: string; organizedDescription: string }, itemIndex: number) => {
+                      const contentItem = findContentItem(item.id);
+                      const isCompleted = contentItem?.isCompleted || false;
+
+                      return (
+                        <motion.div
+                          key={item.id}
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.4 }}
+                          className="w-full"
+                        >
+                          <Card className={`relative w-full rounded-xl border transition-all duration-300 overflow-hidden ${isCompleted ? 'border-green-300 bg-green-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'}`}>
+                            <div className="w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden rounded-t-xl">
+                              <img
+                                src={contentItem?.thumbnail || '/placeholder.svg'}
+                                alt={contentItem?.title || 'Content thumbnail'}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="p-4">
+                              <div className="absolute top-4 left-4 z-10">
+                                {contentItem && (
+                                  <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+                                    {getContentTypeIcon(contentItem.contentType)}
+                                    <span className="capitalize">{contentItem.contentType}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute top-4 right-4 z-10">
+                                <Checkbox
+                                  id={`item-${item.id}`}
+                                  checked={isCompleted}
+                                  onCheckedChange={(checked) => handleProgressChange(item.id, !!checked)}
+                                  disabled={updatingContent === item.id}
+                                  className="w-5 h-5 rounded-full border-gray-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                                />
+                              </div>
+
+                              <CardTitle className="text-lg font-semibold text-gray-800 mt-2 mb-2">{contentItem?.title || 'Conteúdo não encontrado'}</CardTitle>
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-3">{item.organizedDescription}</p>
+                              {contentItem && (
+                                <Link href={`/learning-paths/${learningPathId}/${contentItem.id}`} className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1">
+                                  Acessar Conteúdo
+                                  <ArrowRight className="w-3 h-3" />
+                                </Link>
+                              )}
+                            </div>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+      </motion.div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -162,30 +276,32 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
 
   const { title, topic, description, progress, content } = learningPath;
 
-  // Create a fallback trail if organizedTrail is missing
-  const displayTrail: TrailSection[] = learningPath.organizedTrail?.organizedTrail || [
-    {
-      sectionTitle: "Trilha de Aprendizado",
-      items: (Array.isArray(content) ? content : []).map(c => ({
-        id: c.id,
-        organizedDescription: c.description || 'Acesse o conteúdo para mais detalhes.',
-      })),
-    },
-  ];
+  // Use the organizedTrail from the database if it exists, otherwise create a fallback.
+  const displayTrail: TrailSection[] = learningPath.organizedTrail?.organizedTrail && learningPath.organizedTrail.organizedTrail.length > 0
+    ? learningPath.organizedTrail.organizedTrail
+    : [
+        {
+          sectionTitle: "Trilha de Aprendizado",
+          items: (Array.isArray(content) ? content : []).map(c => ({
+            id: c.id,
+            organizedDescription: c.description || 'Acesse o conteúdo para mais detalhes.',
+          })),
+        },
+      ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50/30 to-white">
-      <header className="px-6 py-6 border-b border-[#F1F5F9]/50 backdrop-blur-sm bg-white/80 sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-[#718096] hover:text-[#2D3748] transition-all duration-200 hover:scale-105">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200">
             <ArrowLeft className="w-4 h-4" />
             <span className="font-medium">Voltar ao Dashboard</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="text-sm font-medium text-[#718096]">
+          <div className="flex items-center gap-4">
+            <div className="text-sm font-medium text-gray-700">
               Progresso: {Math.round(progress || 0)}%
             </div>
-            <div className="w-32 bg-[#E2E8F0] rounded-full h-2.5">
+            <div className="w-32 bg-gray-200 rounded-full h-2.5">
               <motion.div
                 className="bg-gradient-to-r from-[#FF6B35] to-[#E55A2B] h-2.5 rounded-full"
                 initial={{ width: 0 }}
@@ -197,124 +313,35 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="inline-flex items-center gap-2 bg-[#FFE5D9] text-[#FF6B35] px-3 py-1 rounded-full text-sm font-medium">
-              <Sparkles className="w-4 h-4" />
-              <span>{topic}</span>
-            </div>
+          <div className="flex items-center gap-3 mb-4">
+            <Badge variant="secondary" className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+              <Sparkles className="w-3 h-3 mr-1.5" />
+              {topic}
+            </Badge>
           </div>
-          <h1 className="text-4xl font-bold text-[#2D3748] mb-4 leading-tight">{title}</h1>
-          <p className="text-[#718096] text-xl leading-relaxed mb-12">{description}</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{title}</h1>
+          <p className="text-gray-600 text-xl leading-relaxed mb-12">{description}</p>
         </motion.div>
 
-        <div className="space-y-12">
+        <div className="space-y-8">
           {displayTrail.length > 0 ? (
             displayTrail.map((section: TrailSection, sectionIndex: number) => (
-              <motion.div
+              <ModuleCard
                 key={sectionIndex}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + sectionIndex * 0.1, duration: 0.5 }}
-              >
-                <h2 className="text-2xl font-bold text-[#2D3748] mb-6">{section.sectionTitle}</h2>
-                <div className="relative space-y-8">
-                  {section.items.map((item: { id: string; organizedDescription: string }, itemIndex: number) => {
-                      const isLastItem = itemIndex === section.items.length - 1;
-                      const contentItem = findContentItem(item.id);
-                      const isCompleted = contentItem?.isCompleted || false;
-                      const completedCount = (Array.isArray(content) ? content : []).filter(c => c.isCompleted).length;
-                      const globalItemIndex = displayTrail.slice(0, sectionIndex).reduce((acc, s) => acc + s.items.length, 0) + itemIndex;
-                      const isCurrent = !isCompleted && completedCount === globalItemIndex;
-
-                      const getStatusIcon = () => {
-                        if (isCompleted) {
-                          return <CheckCircle2 className="h-10 w-10 text-green-500" />;
-                        }
-                        if (isCurrent) {
-                          return <PlayCircle className="h-10 w-10 text-blue-500 animate-pulse" />;
-                        }
-                        return <Circle className="h-10 w-10 text-[#A0ADB8]" />;
-                      };
-
-                      return (
-                        <div key={item.id} className="flex relative pb-8 last:pb-0">
-                          {/* Linha de conexão */}
-                          {!isLastItem && (
-                            <div className="absolute left-5 top-5 -bottom-8 w-0.5 bg-gray-200" />
-                          )}
-
-                          {/* Ícone de status */}
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center z-10 bg-white">
-                            {getStatusIcon()}
-                          </div>
-
-                          {/* Card de conteúdo */}
-                          <motion.div
-                            layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.4 }}
-                            className="ml-8 w-full"
-                          >
-                            <Card className={`w-full rounded-2xl border-2 transition-all duration-300 ${isCurrent ? 'border-[#FF6B35] bg-gradient-to-r from-[#FFE5D9]/50 to-[#FFF0E6]/50 shadow-lg' : 'border-[#E2E8F0] bg-white hover:border-[#FF6B35]/50'}`}>
-                              <CardHeader>
-                                <CardTitle className="text-xl font-bold text-[#2D3748]">{contentItem?.title || 'Conteúdo não encontrado'}</CardTitle>
-                              {contentItem && (
-                                <div className="flex items-center space-x-4 pt-2 text-sm text-[#718096]">
-                                  <div className="flex items-center gap-2">
-                                    {getContentTypeIcon(contentItem.contentType)}
-                                    <span className="capitalize">{contentItem.contentType}</span>
-                                  </div>
-                                  <span>{contentItem.duration || contentItem.durationMinutes}</span>
-                                </div>
-                              )}
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-[#718096] mb-6">{item.organizedDescription}</p>
-                              {contentItem && (
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                  <Button asChild className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-md hover:shadow-lg">
-                                    <a href={contentItem.url} target="_blank" rel="noopener noreferrer">
-                                      Acessar Conteúdo
-                                    </a>
-                                  </Button>
-                                  <div className="flex items-center space-x-3">
-                                    <Checkbox
-                                      id={`item-${item.id}`}
-                                      checked={isCompleted}
-                                      onCheckedChange={(checked) => handleProgressChange(item.id, !!checked)}
-                                      disabled={updatingContent === item.id}
-                                      className="w-5 h-5 rounded"
-                                    />
-                                    <label htmlFor={`item-${item.id}`} className="text-sm font-medium flex items-center text-[#718096]">
-                                      {updatingContent === item.id ? (
-                                        <>
-                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          Atualizando...
-                                        </>
-                                      ) : (
-                                        'Marcar como concluído'
-                                      )}
-                                    </label>
-                                  </div>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </motion.div>
+                section={section}
+                findContentItem={findContentItem}
+                learningPathId={learningPathId}
+                handleProgressChange={handleProgressChange}
+                updatingContent={updatingContent}
+                getContentTypeIcon={getContentTypeIcon}
+              />
             ))
           ) : (
             <div className="text-center py-16">
-              <h2 className="text-xl font-medium text-[#2D3748] mb-2">Nenhum conteúdo na trilha</h2>
-              <p className="text-[#718096]">Parece que esta trilha de aprendizado ainda não tem conteúdo.</p>
+              <h2 className="text-xl font-medium text-gray-800 mb-2">Nenhum conteúdo na trilha</h2>
+              <p className="text-gray-600">Parece que esta trilha de aprendizado ainda não tem conteúdo.</p>
             </div>
           )}
         </div>

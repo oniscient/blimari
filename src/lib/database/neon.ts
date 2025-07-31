@@ -70,7 +70,7 @@ export const db = {
       const queries = [];
 
       const pathQuery = tx`
-        INSERT INTO learning_paths (id, user_id, title, topic, difficulty, total_content, completed_content, estimated_duration, cultural_profile_id, status, created_at, updated_at)
+        INSERT INTO learning_paths (id, user_id, title, topic, difficulty, total_content, completed_content, estimated_duration, cultural_profile_id, status, created_at, updated_at, organized_trail, progress)
         VALUES (
           ${newId},
           ${pathData.userId},
@@ -83,9 +83,11 @@ export const db = {
           ${pathData.culturalProfileId || null},
           ${pathData.status || "draft"},
           NOW(),
-          NOW()
+          NOW(),
+          ${pathData.organizedTrail ? JSON.stringify(pathData.organizedTrail) : null},
+          ${pathData.progress || 0}
         )
-        RETURNING id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt"
+        RETURNING id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt", organized_trail as "organizedTrail", progress
       `;
       queries.push(pathQuery);
 
@@ -119,7 +121,7 @@ export const db = {
 
   async getLearningPathsByUserId(userId: string) {
     const paths = await sql`
-    SELECT id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt"
+    SELECT id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt", organized_trail as "organizedTrail", progress
     FROM learning_paths
     WHERE user_id = ${userId}
     ORDER BY updated_at DESC
@@ -186,7 +188,7 @@ export const db = {
   async getLearningPathById(id: string) {
     const result = await sql`
       SELECT
-        lp.id, lp.user_id as "userId", lp.title, lp.topic, lp.difficulty, lp.total_content as "totalContent", lp.completed_content as "completedContent", lp.estimated_duration as "estimatedDuration", lp.cultural_profile_id as "culturalProfileId", lp.status, lp.created_at as "createdAt", lp.updated_at as "updatedAt",
+        lp.id, lp.user_id as "userId", lp.title, lp.topic, lp.difficulty, lp.total_content as "totalContent", lp.completed_content as "completedContent", lp.estimated_duration as "estimatedDuration", lp.cultural_profile_id as "culturalProfileId", lp.status, lp.created_at as "createdAt", lp.updated_at as "updatedAt", lp.organized_trail as "organizedTrail", lp.progress,
         pc.id as content_id, pc.path_id as content_path_id, pc.title as content_title, pc.url as content_url, pc.content_type as content_type, pc.duration_minutes as content_duration_minutes, pc.order_index as content_order_index, pc.is_completed as content_is_completed, pc.completed_at as content_completed_at, pc.cultural_enhancements as content_cultural_enhancements, pc.source as content_source, pc.created_at as content_created_at
       FROM learning_paths lp
       LEFT JOIN path_content pc ON lp.id = pc.path_id
@@ -212,7 +214,8 @@ export const db = {
       createdAt: result[0].createdAt,
       updatedAt: result[0].updatedAt,
       description: result[0].description || '', // Assuming description is a string, default to empty
-      progress: result[0].progress || 0, // Assuming progress is a number, default to 0
+      progress: 0, // Será recalculado abaixo
+      organizedTrail: result[0].organizedTrail,
       content: [],
     };
 
@@ -238,6 +241,21 @@ export const db = {
       }
     });
 
+    // Recalcular o progresso com base no conteúdo
+    if (learningPath.content && learningPath.content.length > 0) {
+      const completed = learningPath.content.filter(c => c.isCompleted).length;
+      learningPath.progress = Math.round((completed / learningPath.content.length) * 100);
+    }
+
     return learningPath;
+  },
+
+  async getContentItemById(id: string) {
+    const [item] = await sql`
+      SELECT id, path_id as "pathId", title, url, content_type as "contentType", duration_minutes as "durationMinutes", order_index as "orderIndex", is_completed as "isCompleted", completed_at as "completedAt", cultural_enhancements as "culturalEnhancements", source, created_at as "createdAt"
+      FROM path_content
+      WHERE id = ${id}
+    `;
+    return item as ContentItem | undefined;
   },
 }

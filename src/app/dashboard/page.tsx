@@ -42,9 +42,68 @@ import { LearningPath, OrganizedTrail } from "@/src/types"; // Importar tipos
 
 export default function DashboardPage() {
   const user = useUser({ or: "redirect" });
-  const [progress, setProgress] = useState(0);
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [loadingLearningPaths, setLoadingLearningPaths] = useState(true);
+
+  // Calculate overall progress
+  const overallProgress = learningPaths.length > 0
+    ? Math.round(learningPaths.reduce((sum, path) => sum + path.progress, 0) / learningPaths.length)
+    : 0;
+
+  // Reusable Circular Progress Component
+  interface CircularProgressProps {
+    progress: number;
+    size?: number;
+    strokeWidth?: number;
+    gradientId: string;
+  }
+
+  const CircularProgress: React.FC<CircularProgressProps> = ({
+    progress,
+    size = 32,
+    strokeWidth = 4,
+    gradientId,
+  }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference * (1 - progress / 100);
+
+    return (
+      <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+        <svg className="w-full h-full" viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            className="text-gray-200"
+            strokeWidth={strokeWidth}
+            stroke="currentColor"
+            fill="transparent"
+            r={radius}
+            cx={size / 2}
+            cy={size / 2}
+          />
+          <circle
+            className="text-orange-500"
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            stroke={`url(#${gradientId})`}
+            fill="transparent"
+            r={radius}
+            cx={size / 2}
+            cy={size / 2}
+            style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
+          />
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FF8A65" />
+              <stop offset="100%" stopColor="#FF6B35" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span className="absolute text-[10px] font-bold text-gray-800">{Math.round(progress)}%</span>
+      </div>
+    );
+  };
 
   const fetchLearningPaths = useCallback(async () => {
     if (!user) return;
@@ -172,6 +231,8 @@ export default function DashboardPage() {
     }
   }, [user, fetchLearningPaths]);
 
+
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "Concluído":
@@ -194,122 +255,126 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="px-6 py-6 border-b border-[#F1F5F9]/50 backdrop-blur-sm bg-white/80">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/">
-            <h1 className="text-lg font-medium text-[#2D3748]">Blimari</h1>
+            <h1 className="text-lg font-medium text-gray-800">Blimari</h1>
           </Link>
           <MobileMenu />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold text-[#2D3748]">
-          Olá, {user.displayName || "Explorador"}!
-        </h1>
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Olá, {user.displayName || "Explorador"}!
+          </h1>
+          <Link href="/" passHref>
+            <Button className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
+              Nova trilha
+            </Button>
+          </Link>
+        </div>
 
         {/* Seu Progresso Section */}
-        <Card className="rounded-2xl shadow-md border border-[#E2E8F0] bg-white">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-[#2D3748]">Seu Progresso</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row items-center gap-6">
-            <div className="relative w-32 h-32 flex items-center justify-center">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <circle
-                  className="text-gray-200"
-                  strokeWidth="10"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="40"
-                  cx="50"
-                  cy="50"
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Seu Progresso</h2>
+          <Card className="rounded-xl shadow-md border border-gray-200 bg-white p-6">
+            <CardContent className="flex flex-col md:flex-row items-center gap-6 p-0">
+              <div className="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                  <circle
+                    className="text-gray-200"
+                    strokeWidth="10"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                  />
+                  <circle
+                    className="text-orange-500"
+                    strokeWidth="10"
+                    strokeDasharray={2 * Math.PI * 40}
+                    strokeDashoffset={2 * Math.PI * 40 * (1 - overallProgress / 100)}
+                    strokeLinecap="round"
+                    stroke="url(#progressGradient)"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                    style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
+                  />
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FF8A65" />
+                      <stop offset="100%" stopColor="#FF6B35" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span className="absolute text-base font-bold text-gray-800">{overallProgress}%</span>
+              </div>
+              <div className="flex-1 w-full">
+                <p className="text-lg font-medium text-gray-700 mb-2">
+                  Próximo Passo: Concluir o módulo de Tailwind CSS
+                </p>
+                <Progress
+                  value={overallProgress}
+                  className="h-3 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
                 />
-                <circle
-                  className="text-orange-500"
-                  strokeWidth="10"
-                  strokeDasharray={2 * Math.PI * 40}
-                  strokeDashoffset={2 * Math.PI * 40 * (1 - progress / 100)}
-                  strokeLinecap="round"
-                  stroke="url(#progressGradient)"
-                  fill="transparent"
-                  r="40"
-                  cx="50"
-                  cy="50"
-                  style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
-                />
-                <defs>
-                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FF8A65" />
-                    <stop offset="100%" stopColor="#FF6B35" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <span className="absolute text-2xl font-bold text-[#2D3748]">{progress}%</span>
-            </div>
-            <div className="flex-1 w-full">
-              <p className="text-lg font-medium text-[#718096] mb-2">
-                Próximo Passo: Concluir o módulo de Tailwind CSS
-              </p>
-              <Progress
-                value={progress}
-                className="h-3 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
-              />
-              <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                Continue Learning
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
+                  Continue Learning
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
 
         {/* Módulos de Aprendizado Section */}
-        <section className="mt-8">
-          <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Módulos de Aprendizado</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Módulos de Aprendizado</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loadingLearningPaths ? (
-              <div className="col-span-full flex justify-center items-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35]" />
-                <p className="ml-2 text-[#718096]">Carregando trilhas de aprendizado...</p>
+              <div className="col-span-full flex flex-col items-center justify-center py-8 min-h-[200px]">
+                <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35] mb-2" />
+                <p className="text-gray-600">Carregando trilhas de aprendizado...</p>
               </div>
             ) : learningPaths.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-[#718096]">
-                <p>Nenhuma trilha de aprendizado encontrada. Comece a criar uma nova!</p>
-                <Link href="/create/sources" className="text-[#FF6B35] hover:underline mt-2 block">
-                  Criar Nova Trilha
+              <div className="col-span-full text-center py-8 text-gray-600">
+                <p className="mb-4">Nenhuma trilha de aprendizado encontrada. Comece a criar uma nova!</p>
+                <Link href="/create/sources" className="text-[#FF6B35] hover:underline inline-flex items-center gap-1">
+                  Criar Nova Trilha <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             ) : (
               learningPaths.map((path) => (
-                <Card key={path.id} className="rounded-2xl shadow-md border border-[#E2E8F0] bg-white">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold text-[#2D3748]">{path.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-[#718096]">
-                      <BookOpen className="w-4 h-4" />
-                      <span>Tópico: {path.topic}</span>
+                <Card key={path.id} className="relative rounded-xl shadow-md border border-gray-200 bg-white overflow-hidden">
+                  <div className="w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden rounded-t-xl">
+                    <img
+                      src={path.thumbnail || '/placeholder.svg'}
+                      alt={path.title || 'Learning path thumbnail'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute top-4 left-4 z-10">
+                    <CircularProgress progress={path.progress} gradientId={`pathProgressGradient-${path.id}`} />
+                  </div>
+                  <CardContent className="p-4">
+                    <CardTitle className="text-lg font-semibold text-gray-800 mb-2">{path.title}</CardTitle>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{path.description}</p>
+                    <div className="flex flex-col gap-1 text-xs text-gray-500 mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <BookOpen className="w-3 h-3" />
+                        <span>Tópico: {path.topic}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Award className="w-3 h-3" />
+                        <span>Dificuldade: {path.difficulty}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-[#718096]">
-                      <Award className="w-4 h-4" />
-                      <span>Dificuldade: {path.difficulty}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-[#718096]">
-                      <Activity className="w-4 h-4" />
-                      <span>Status: <Badge className={getStatusBadgeClass(path.status)}>{path.status}</Badge></span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-[#718096]">Progresso:</p>
-                      <Progress
-                        value={path.progress}
-                        className="h-2 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
-                      />
-                      <span className="text-xs text-[#718096]">{path.progress}% Concluído</span>
-                    </div>
-                    <Link href={`/learning-paths/${path.id}`} passHref>
-                      <Button className="w-full bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200">
-                        Ver Trilha <ChevronRight className="ml-2 w-4 h-4" />
-                      </Button>
+                    <Link href={`/learning-paths/${path.id}`} passHref className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1">
+                      Ver Trilha <ChevronRight className="w-3 h-3" />
                     </Link>
                   </CardContent>
                 </Card>
@@ -319,21 +384,23 @@ export default function DashboardPage() {
         </section>
 
         {/* Atividade Recente Section */}
-        <section className="mt-8">
-          <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Atividade Recente</h2>
-          <Card className="rounded-2xl shadow-md border border-[#E2E8F0] bg-white">
-            <CardContent className="p-6 space-y-4">
-              {/* Recent activity will be dynamically loaded */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Atividade Recente</h2>
+          <Card className="rounded-xl shadow-md border border-gray-200 bg-white">
+            <CardContent className="p-6 space-y-4 text-gray-600">
+              <p>Nenhuma atividade recente para mostrar.</p>
             </CardContent>
           </Card>
         </section>
 
         {/* Conteúdo Recomendado Section */}
-        <section className="mt-8">
-          <h2 className="text-2xl font-bold text-[#2D3748] mb-6">Conteúdo Recomendado</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-            {/* Recommended content will be dynamically loaded */}
-          </div>
+        <section>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Conteúdo Recomendado</h2>
+          <Card className="rounded-xl shadow-md border border-gray-200 bg-white">
+            <CardContent className="p-6 space-y-4 text-gray-600">
+              <p>Nenhum conteúdo recomendado no momento.</p>
+            </CardContent>
+          </Card>
         </section>
       </main>
     </div>

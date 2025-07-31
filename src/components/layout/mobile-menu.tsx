@@ -23,8 +23,7 @@ export function MobileMenu() {
   }
 
   const navItems = [
-    { name: "Início", href: "/", icon: Home },
-    { name: "Criar Trilha", href: "/create/questions", icon: PlusCircle },
+    { name: "Nova trilha", href: "/create/questions", icon: PlusCircle },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Minhas Trilhas", href: "/path/123", icon: BookOpen }, // Placeholder
     { name: "Quizzes", href: "/quiz/123", icon: Lock }, // Placeholder

@@ -47,6 +47,7 @@ export interface LearningPath {
   updatedAt: string
   description: string
   progress: number
+  thumbnail?: string // Adicionado para a imagem de capa da trilha
   organizedTrail?: OrganizedTrail // Adicionado para armazenar a trilha organizada
   content?: ContentItem[] // Adicionado para armazenar o conteúdo organizado
 }
