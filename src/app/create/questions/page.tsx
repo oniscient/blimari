@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ArrowRight, CheckCircle, Sparkles, Target, BookOpen, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion";
 import Loader from "@/src/components/ui/loading";
+import { audioService } from "@/src/services/audio.service";
 
 interface Question {
   id: number
@@ -71,7 +72,8 @@ export default function QuestionsPage() {
   }
 
   const handleAnswer = (optionId: string) => {
-    setAnswers((prev) => ({ ...prev, [currentQuestion]: optionId }))
+    setAnswers((prev) => ({ ...prev, [currentQuestion]: optionId }));
+    audioService.playClickSound();
   }
 
   const nextQuestion = () => {

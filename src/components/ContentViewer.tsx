@@ -27,13 +27,26 @@ const YouTubePlayer = ({ url }: { url: string }) => {
   );
 };
 
-const ArticleViewer = ({ url }: { url: string }) => {
+const ArticleViewer = ({ htmlContent, url }: { htmlContent?: string; url: string }) => {
+  if (htmlContent) {
+    return (
+      <div className="prose dark:prose-invert max-w-none p-6" dangerouslySetInnerHTML={{ __html: htmlContent }} />
+    );
+  }
   return (
-    <iframe
-      src={url}
-      className="w-full h-screen border-0 rounded-lg"
-      title="Content Viewer"
-    ></iframe>
+    <div className="text-center py-12">
+      <p className="text-lg text-gray-600">
+        Este tipo de conteúdo não pode ser exibido diretamente.
+      </p>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 inline-block bg-[#FF6B35] text-white px-6 py-2 rounded-full"
+      >
+        Acessar Conteúdo Externamente
+      </a>
+    </div>
   );
 };
 
@@ -45,7 +58,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ item }) => {
       case 'article':
       case 'tutorial':
       case 'documentation':
-        return <ArticleViewer url={item.url} />;
+        return <ArticleViewer htmlContent={item.htmlContent} url={item.url} />;
       default:
         return (
           <div className="text-center py-12">

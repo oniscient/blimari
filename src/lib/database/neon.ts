@@ -97,7 +97,7 @@ export const db = {
           const contentQuery = tx`
             INSERT INTO path_content (id, path_id, title, url, content_type, duration_minutes, order_index, is_completed, source, created_at)
             VALUES (
-              ${item.id || uuidv4()},
+              ${uuidv4()},
               ${newId},
               ${item.title},
               ${item.url},
@@ -257,5 +257,34 @@ export const db = {
       WHERE id = ${id}
     `;
     return item as ContentItem | undefined;
+  },
+
+  async getContentItemByUrl(url: string) {
+    const [item] = await sql`
+      SELECT id, path_id as "pathId", title, url, content_type as "contentType", duration_minutes as "durationMinutes", order_index as "orderIndex", is_completed as "isCompleted", completed_at as "completedAt", cultural_enhancements as "culturalEnhancements", source, created_at as "createdAt"
+      FROM path_content
+      WHERE url = ${url}
+    `;
+    return item as ContentItem | undefined;
+  },
+
+  async findNextLessonForUser(userId: string) {
+    const learningPaths = await db.getLearningPathsByUserId(userId);
+
+    for (const path of learningPaths) {
+      const contentItems = await db.getContentItemsByPathId(path.id);
+      const nextIncompleteLesson = contentItems.find(item => !item.isCompleted);
+      if (nextIncompleteLesson) {
+        return {
+          learningPathId: path.id,
+          learningPathTitle: path.title,
+          lessonId: nextIncompleteLesson.id,
+          lessonTitle: nextIncompleteLesson.title,
+          lessonUrl: nextIncompleteLesson.url,
+          lessonType: nextIncompleteLesson.contentType,
+        };
+      }
+    }
+    return null;
   },
 }

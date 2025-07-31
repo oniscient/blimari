@@ -44,6 +44,15 @@ export default function DashboardPage() {
   const user = useUser({ or: "redirect" });
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [loadingLearningPaths, setLoadingLearningPaths] = useState(true);
+  const [nextLesson, setNextLesson] = useState<{
+    learningPathId: string;
+    learningPathTitle: string;
+    lessonId: string;
+    lessonTitle: string;
+    lessonUrl: string;
+    lessonType: string;
+  } | null>(null);
+  const [loadingNextLesson, setLoadingNextLesson] = useState(true);
 
   // Calculate overall progress
   const overallProgress = learningPaths.length > 0
@@ -100,7 +109,7 @@ export default function DashboardPage() {
             </linearGradient>
           </defs>
         </svg>
-        <span className="absolute text-[10px] font-bold text-gray-800">{Math.round(progress)}%</span>
+        <span className="absolute text-[8px] font-bold text-gray-800">{Math.round(progress)}%</span>
       </div>
     );
   };
@@ -313,19 +322,44 @@ export default function DashboardPage() {
                     </linearGradient>
                   </defs>
                 </svg>
-                <span className="absolute text-base font-bold text-gray-800">{overallProgress}%</span>
+                <span className="absolute text-sm font-bold text-gray-800">{overallProgress}%</span>
               </div>
               <div className="flex-1 w-full">
-                <p className="text-lg font-medium text-gray-700 mb-2">
-                  Próximo Passo: Concluir o módulo de Tailwind CSS
-                </p>
-                <Progress
-                  value={overallProgress}
-                  className="h-3 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
-                />
-                <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                  Continue Learning
-                </Button>
+                {loadingNextLesson ? (
+                  <div className="flex items-center text-gray-600">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Carregando próximo passo...
+                  </div>
+                ) : nextLesson ? (
+                  <>
+                    <p className="text-lg font-medium text-gray-700 mb-2">
+                      Próximo Passo: {nextLesson.lessonTitle}
+                    </p>
+                    <Progress
+                      value={overallProgress}
+                      className="h-3 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
+                    />
+                    <Link href={`/learning-paths/${nextLesson.learningPathId}/${nextLesson.lessonId}`} passHref>
+                      <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
+                        Continue Learning
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-medium text-gray-700 mb-2">
+                      Parece que você concluiu todas as suas trilhas!
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Que tal criar uma nova trilha de aprendizado para continuar explorando?
+                    </p>
+                    <Link href="/create/sources" passHref>
+                      <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
+                        Criar Nova Trilha
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

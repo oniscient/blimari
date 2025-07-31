@@ -14,6 +14,7 @@ import { CheckCircle2, Circle, PlayCircle, Terminal, Loader2, ArrowLeft, Sparkle
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { audioService } from '@/src/services/audio.service';
 
 interface LearningPathPageProps {
   params: {
@@ -75,6 +76,9 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
 
       if (response.ok && result.success && result.data) {
         setLearningPath(result.data);
+        if (isCompleted) {
+          audioService.playContentPathDoneSound();
+        }
         toast.success('Progresso atualizado com sucesso!');
       } else {
         throw new Error(result.message || 'Falha ao atualizar o progresso.');
@@ -201,7 +205,10 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
                               <CardTitle className="text-lg font-semibold text-gray-800 mt-2 mb-2">{contentItem?.title || 'Conteúdo não encontrado'}</CardTitle>
                               <p className="text-sm text-gray-600 mb-4 line-clamp-3">{item.organizedDescription}</p>
                               {contentItem && (
-                                <Link href={`/learning-paths/${learningPathId}/${contentItem.id}`} className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1">
+                                <Link
+                                  href={contentItem.id.startsWith('http') ? `/learning-paths/${learningPathId}/view?contentUrl=${encodeURIComponent(contentItem.id)}` : `/learning-paths/${learningPathId}/${contentItem.id}`}
+                                  className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1"
+                                >
                                   Acessar Conteúdo
                                   <ArrowRight className="w-3 h-3" />
                                 </Link>

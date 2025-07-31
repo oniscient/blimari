@@ -20,6 +20,7 @@ import { ContentDetailsPopup } from "@/src/components/ContentDetailsPopup"
 import { Stepper, Step } from "@/src/components/ui/Stepper"
 import Loader from "@/src/components/ui/loading"
 import { ContentItem, OrganizedTrail, TrailSection, LearningPath } from "@/src/types" // Importar tipos
+import { audioService } from "@/src/services/audio.service";
 
 interface ProcessingStep {
   id: string
@@ -333,12 +334,13 @@ export default function ProcessingPage() {
       
       // Check if this is the last step to set completion
       if (stepIndex === steps.length - 1) {
-        setIsComplete(true)
-        console.log("All steps completed!")
+        setIsComplete(true);
+        audioService.playProcessingCompletedSound(); // Play sound on completion
+        console.log("All steps completed!");
       }
     },
     [steps, topic, sources, answers, user],
-  )
+  );
 
   const startProcessing = useCallback(async () => {
     if (hasStarted.current) return

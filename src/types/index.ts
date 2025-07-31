@@ -79,6 +79,7 @@ export interface ContentItem {
   culturalScore: number
   qualityScore: number
   metadata?: Record<string, any>
+  htmlContent?: string // Added for fetched HTML content
 }
 
 export type ContentType = "video" | "article" | "tutorial" | "documentation" | "course" | "podcast" | "book"
