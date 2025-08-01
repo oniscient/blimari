@@ -80,7 +80,7 @@ npm run dev          # Desenvolvimento
 npm run build        # Build de produção
 npm run start        # Servidor de produção
 npm run lint         # Linting
-npm run type-check   # Verificação de tipos
+npm run type-check   # Verificação de tipos 
 npm run test         # Testes
 \`\`\`
 
