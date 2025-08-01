@@ -480,5 +480,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 **Links & Resources**
 
 - **🌐 Live Demo**: [blimari.space](https://blimari.space)
-- **🎥 Demo Video**: [Watch on YouTube](https://youtu.be/blimari-demo)
+- **🎥 Demo Video**: [Watch on YouTube](https://youtu.be/k145dw0TcKc)
 - **📧 Contact**: [hello@blimari.space](mailto:hello@blimari.space)
