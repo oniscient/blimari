@@ -6,9 +6,11 @@ import { UserButton } from "@stackframe/stack"
 import { Home, PlusCircle, LayoutDashboard, BookOpen, HelpCircle, Info, Lock } from "lucide-react"
 import AnimatedHamburger from "../ui/AnimatedHamburger"
 import Link from "next/link"
+import { useTranslation } from 'react-i18next';
 
 export function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation();
 
   const toggleMenu = () => setIsOpen(!isOpen)
 
@@ -23,10 +25,10 @@ export function MobileMenu() {
   }
 
   const navItems = [
-    { name: "Nova trilha", href: "/create/questions", icon: PlusCircle },
+    { name: t('new_trail'), href: "/create/questions", icon: PlusCircle },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Minhas Trilhas", href: "/path/123", icon: BookOpen }, // Placeholder
-    { name: "Quizzes", href: "/quiz/123", icon: Lock }, // Placeholder
+    { name: t('my_trails'), href: "/path/123", icon: BookOpen }, // Placeholder
+    { name: t('quizzes'), href: "/quiz/123", icon: Lock }, // Placeholder
   ]
 
   return (
@@ -111,7 +113,7 @@ export function MobileMenu() {
                 className="flex items-center gap-3 p-3 rounded-lg text-[#718096] hover:bg-[#F1F5F9] transition-colors duration-200"
               >
                 <Info className="h-5 w-5" />
-                <span className="font-medium">Sobre</span>
+                <span className="font-medium">{t('about')}</span>
               </Link>
               <Link
                 href="#"
@@ -119,7 +121,7 @@ export function MobileMenu() {
                 className="flex items-center gap-3 p-3 rounded-lg text-[#718096] hover:bg-[#F1F5F9] transition-colors duration-200"
               >
                 <HelpCircle className="h-5 w-5" />
-                <span className="font-medium">Ajuda</span>
+                <span className="font-medium">{t('help')}</span>
               </Link>
             </div>
           </motion.nav>

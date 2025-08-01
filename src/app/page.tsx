@@ -10,11 +10,13 @@ import Link from "next/link"
 import { MobileMenu } from "@/src/components/layout/mobile-menu"
 import DarkVeil from "@/src/components/ui/DarkVeil"
 import AnimatedTopicCard from "@/src/components/ui/AnimatedTopicCard"
+import { useTranslation } from 'react-i18next';
 
 export default function HomePage() {
   const [learningGoal, setLearningGoal] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { t } = useTranslation();
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -22,11 +24,11 @@ export default function HomePage() {
       setIsLoading(true)
 
       try {
-        // Navegar para a página de perguntas com o tópico
+        // {t('navigate_to_questions_page_comment')}
         const encodedTopic = encodeURIComponent(learningGoal.trim())
         router.push(`/create/questions?topic=${encodedTopic}`)
       } catch (error) {
-        console.error("Erro ao navegar:", error)
+        console.error(t('error_navigating'), error)
         setIsLoading(false)
       }
     }
@@ -58,7 +60,7 @@ export default function HomePage() {
             {/* Logo/Brand */}
             <div className="text-center mb-12">
               <h2 className="text-6xl font-light text-gray-800 mb-6 tracking-tight">Blimari</h2>
-              <p className="text-lg text-gray-700 font-light">Transforme qualquer tópico em uma trilha de aprendizado</p>
+              <p className="text-lg text-gray-700 font-light">{t('transform_topic_to_learning_path')}</p>
             </div>
 
             {/* Search Form */}
@@ -69,7 +71,7 @@ export default function HomePage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="O que você quer aprender?"
+                  placeholder={t('what_do_you_want_to_learn')}
                   value={learningGoal}
                   onChange={(e) => setLearningGoal(e.target.value)}
                   disabled={isLoading}
@@ -92,7 +94,7 @@ export default function HomePage() {
 
             {/* Beautiful Examples */}
             <div className="mt-16 text-center">
-              <p className="text-sm text-gray-600 mb-6 font-light">Ou explore estes tópicos populares:</p>
+              <p className="text-sm text-gray-600 mb-6 font-light">{t('or_explore_popular_topics')}</p>
               <div className="flex justify-center gap-4 max-w-4xl mx-auto">
                 {[
                   { name: "Machine Learning", description: "Learn the fundamentals of AI and machine learning." },

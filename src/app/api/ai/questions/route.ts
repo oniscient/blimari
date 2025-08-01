@@ -30,7 +30,7 @@ const QuestionsSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { topic } = body
+    const { topic, language } = body
 
     if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
       return NextResponse.json<APIResponse>(
@@ -46,67 +46,68 @@ export async function POST(request: NextRequest) {
       model,
       schema: QuestionsSchema,
       prompt: `
-Você é um especialista em educação e personalização de aprendizado. Um usuário quer aprender sobre "${topic}".
+      You are an expert in education and learning personalization. A user wants to learn about "${topic}".
+      The user's language is ${language}.
 
-Crie EXATAMENTE 3 perguntas estratégicas para personalizar completamente a trilha de aprendizado sobre "${topic}".
+      Create EXACTLY 3 strategic questions to completely personalize the learning path about "${topic}".
 
-ESTRUTURA OBRIGATÓRIA:
+      REQUIRED STRUCTURE:
 
-**PERGUNTA 1 - EXPERIÊNCIA** (category: "experience")
-- Descobrir o nível atual de conhecimento sobre "${topic}"
-- 3 opções: Iniciante, Intermediário, Avançado
-- Cada opção deve ter weight de 1 a 5 (1=iniciante, 5=expert)
+      **QUESTION 1 - EXPERIENCE** (category: "experience")
+      - Discover the current level of knowledge about "${topic}"
+      - 3 options: Beginner, Intermediate, Advanced
+      - Each option must have a weight from 1 to 5 (1=beginner, 5=expert)
 
-**PERGUNTA 2 - ESTILO DE APRENDIZADO** (category: "learning_style")
-- Identificar como a pessoa aprende melhor
-- 3 opções: Visual/Prático, Teórico/Conceitual, Hands-on/Projetos
-- Weight baseado na intensidade do estilo (1-5)
+      **QUESTION 2 - LEARNING STYLE** (category: "learning_style")
+      - Identify how the person learns best
+      - 3 options: Visual/Practical, Theoretical/Conceptual, Hands-on/Projects
+      - Weight based on the intensity of the style (1-5)
 
-**PERGUNTA 3 - OBJETIVO** (category: "goal")
-- Entender a motivação e aplicação do conhecimento
-- 3 opções: Carreira/Profissional, Interesse Pessoal, Acadêmico/Certificação
-- Weight baseado na urgência/intensidade do objetivo (1-5)
+      **QUESTION 3 - GOAL** (category: "goal")
+      - Understand the motivation and application of the knowledge
+      - 3 options: Career/Professional, Personal Interest, Academic/Certification
+      - Weight based on the urgency/intensity of the goal (1-5)
 
-REGRAS CRÍTICAS:
-1. Seja ESPECÍFICO para "${topic}" - não genérico
-2. Perguntas diretas e envolventes
-3. Opções bem distintas e relevantes
-4. Descrições claras e motivadoras
-5. Português brasileiro natural
-6. Foque na PERSONALIZAÇÃO da trilha
+      CRITICAL RULES:
+      1. Be SPECIFIC to "${topic}" - not generic
+      2. Direct and engaging questions
+      3. Very distinct and relevant options
+      4. Clear and motivating descriptions
+      5. The questions and options should be in ${language}
+      6. Focus on PERSONALIZING the path
 
-EXEMPLO DE ESTRUTURA:
-{
-  "topic": "${topic}",
-  "questions": [
-    {
-      "id": 1,
-      "question": "Qual é sua experiência atual com ${topic}?",
-      "description": "Isso nos ajuda a calibrar o nível de complexidade do conteúdo",
-      "category": "experience",
-      "options": [
-        {
-          "id": "beginner",
-          "text": "Nunca trabalhei com isso",
-          "description": "Vou começar do zero, preciso dos fundamentos",
-          "weight": 1
-        },
-        {
-          "id": "intermediate",
-          "text": "Tenho alguma experiência",
-          "description": "Já vi sobre o assunto, mas quero aprofundar",
-          "weight": 3
-        },
-        {
-          "id": "advanced",
-          "text": "Já trabalho com isso",
-          "description": "Quero me especializar e dominar técnicas avançadas",
-          "weight": 5
-        }
-      ]
-    }
-  ]
-}
+      EXAMPLE STRUCTURE:
+      {
+        "topic": "${topic}",
+        "questions": [
+          {
+            "id": 1,
+            "question": "What is your current experience with ${topic}?",
+            "description": "This helps us calibrate the complexity of the content",
+            "category": "experience",
+            "options": [
+              {
+                "id": "beginner",
+                "text": "I have never worked with this",
+                "description": "I will start from scratch, I need the fundamentals",
+                "weight": 1
+              },
+              {
+                "id": "intermediate",
+                "text": "I have some experience",
+                "description": "I have seen the subject before, but I want to go deeper",
+                "weight": 3
+              },
+              {
+                "id": "advanced",
+                "text": "I already work with this",
+                "description": "I want to specialize and master advanced techniques",
+                "weight": 5
+              }
+            ]
+          }
+        ]
+      }
       `,
       temperature: 0.7,
     })

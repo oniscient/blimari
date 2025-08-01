@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, CheckCircle, Sparkles, Target, BookOpen, Zap } f
 import { motion, AnimatePresence } from "framer-motion";
 import Loader from "@/src/components/ui/loading";
 import { audioService } from "@/src/services/audio.service";
+import { useTranslation } from 'react-i18next';
 
 interface Question {
   id: number
@@ -29,6 +30,7 @@ export default function QuestionsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const topic = searchParams.get("topic")
+  const { t, i18n } = useTranslation();
 
   const [questionsData, setQuestionsData] = useState<QuestionsData | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -53,7 +55,7 @@ export default function QuestionsPage() {
       const response = await fetch("/api/ai/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topic, language: i18n.language }),
       })
 
       const data = await response.json()
@@ -61,11 +63,11 @@ export default function QuestionsPage() {
       if (data.success) {
         setQuestionsData(data.data)
       } else {
-        setError(data.error || "Erro ao gerar perguntas")
+        setError(data.error || t('error_generating_questions'))
       }
     } catch (error) {
-      console.error("Erro ao gerar perguntas:", error)
-      setError("Falha na conexão. Tente novamente.")
+      console.error(t('error_generating_questions'), error)
+      setError(t('connection_failed_try_again'))
     } finally {
       setLoading(false)
     }
@@ -142,8 +144,8 @@ export default function QuestionsPage() {
           <div className="flex justify-center">
             <Loader />
           </div>
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2 mt-8">Gerando perguntas personalizadas</h2>
-          <p className="text-[#718096]">Analisando <strong>"{topic}"</strong> para criar a melhor experiência...</p>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2 mt-8">{t('generating_personalized_questions')}</h2>
+          <p className="text-[#718096]">{t('analyzing_topic_to_create_experience', { topic })}</p>
         </div>
       </div>
     );
@@ -160,13 +162,13 @@ export default function QuestionsPage() {
           >
             <span className="text-2xl text-red-500">⚠️</span>
           </motion.div>
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2">Ops! Algo deu errado</h2>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2">{t('oops_something_went_wrong')}</h2>
           <p className="text-[#718096] mb-6">{error}</p>
           <button
             onClick={generateQuestions}
             className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white px-6 py-3 rounded-full font-medium transition-colors duration-200"
           >
-            Tentar novamente
+            {t('try_again')}
           </button>
         </div>
       </div>
@@ -190,7 +192,7 @@ export default function QuestionsPage() {
             className="flex items-center gap-2 text-[#718096] hover:text-[#2D3748] transition-all duration-200 hover:scale-105"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Voltar</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
           <div className="flex items-center gap-3">
             <div className="text-sm font-medium text-[#718096]">
@@ -294,7 +296,7 @@ export default function QuestionsPage() {
                         
                         {/* Weight indicator */}
                         <div className="flex items-center gap-2 mt-4">
-                          <span className="text-xs text-[#A0ADB8] font-medium">Intensidade:</span>
+                          <span className="text-xs text-[#A0ADB8] font-medium">{t('intensity')}:</span>
                           <div className="flex gap-1">
                             {[...Array(5)].map((_, i) => (
                               <div
@@ -316,7 +318,7 @@ export default function QuestionsPage() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <motion.div 
+        <motion.div
           className="flex justify-between items-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -328,7 +330,7 @@ export default function QuestionsPage() {
             className="flex items-center gap-2 px-6 py-3 text-[#718096] hover:text-[#2D3748] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Anterior</span>
+            <span className="font-medium">{t('back')}</span>
           </button>
 
           <motion.button
@@ -338,7 +340,7 @@ export default function QuestionsPage() {
             whileTap={{ scale: currentAnswer ? 0.95 : 1 }}
             className="flex items-center gap-3 bg-gradient-to-r from-[#FF6B35] to-[#E55A2B] hover:from-[#E55A2B] hover:to-[#D14D1F] disabled:from-[#A0ADB8] disabled:to-[#A0ADB8] text-white px-10 py-4 rounded-full font-bold transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none"
           >
-            <span className="text-lg">{isLastQuestion ? "Criar Trilha" : "Próxima"}</span>
+            <span className="text-lg">{isLastQuestion ? t('create_trail') : t('next')}</span>
             <ArrowRight className="w-4 h-4" />
           </motion.button>
         </motion.div>

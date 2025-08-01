@@ -3,13 +3,13 @@ import { geminiService } from "@/src/services/ai/gemini.service"
 
 export async function POST(request: NextRequest) {
   try {
-    const { answers, topic } = await request.json()
+    const { answers, topic, language } = await request.json()
 
     if (!answers || !topic) {
       return NextResponse.json({ success: false, error: "Missing answers or topic" }, { status: 400 })
     }
 
-    const { insightText, recommendedSources } = await geminiService.generateInsights(answers, topic)
+    const { insightText, recommendedSources } = await geminiService.generateInsights(answers, topic, language)
 
     return NextResponse.json({
       success: true,

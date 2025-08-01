@@ -1,7 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 
 const Card = () => {
+  const { t } = useTranslation();
   return (
     <StyledWrapper>
       <div className="main_wrapper">
@@ -25,10 +27,10 @@ const Card = () => {
               <div className="screen_out">
                 <div className="screen_out1">
                   <div className="screen">
-                    <span className="notfound_text"> NOT FOUND</span>
+                    <span className="notfound_text"> {t('not_found')}</span>
                   </div>
                   <div className="screenM">
-                    <span className="notfound_text"> NOT FOUND</span>
+                    <span className="notfound_text"> {t('not_found')}</span>
                   </div>
                 </div>
               </div>

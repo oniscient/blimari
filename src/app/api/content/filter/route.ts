@@ -3,13 +3,13 @@ import { geminiService } from "@/src/services/ai/gemini.service"
 
 export async function POST(request: NextRequest) {
   try {
-    const { contentList, topic, answers } = await request.json()
+    const { contentList, topic, answers, language } = await request.json()
 
     if (!contentList || !Array.isArray(contentList) || !topic || !answers || !Array.isArray(answers)) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
-    const approvedContentIds = await geminiService.filterContent(contentList, topic, answers)
+    const approvedContentIds = await geminiService.filterContent(contentList, topic, answers, language)
 
     console.log("API /api/content/filter: Gemini service returned approved IDs:", approvedContentIds)
 

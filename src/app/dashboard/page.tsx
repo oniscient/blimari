@@ -27,6 +27,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { MobileMenu } from "@/src/components/layout/mobile-menu";
+import LanguageSwitcher from "@/src/components/LanguageSwitcher";
+import { useTranslation } from 'react-i18next';
 
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -53,6 +55,7 @@ export default function DashboardPage() {
     lessonType: string;
   } | null>(null);
   const [loadingNextLesson, setLoadingNextLesson] = useState(true);
+  const { t } = useTranslation();
 
   // Calculate overall progress
   const overallProgress = learningPaths.length > 0
@@ -137,7 +140,7 @@ export default function DashboardPage() {
       fetch('/api/user/sync', { method: 'POST' })
         .then(res => {
           if (!res.ok) {
-            console.error('Falha ao sincronizar utilizador');
+            console.error(t('failed_to_sync_user'));
           }
           return res.json();
         })
@@ -145,22 +148,22 @@ export default function DashboardPage() {
           console.log('Utilizador sincronizado:', data);
         })
         .catch(error => {
-          console.error('Erro na sincronização:', error);
+          console.error(t('error_syncing'), error);
         });
 
       fetchLearningPaths(); // Initial fetch of learning paths
     }
-  }, [user, fetchLearningPaths]);
+  }, [user, fetchLearningPaths, t]);
 
 
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case "Concluído":
+      case t('completed'):
         return "bg-green-100 text-green-800 border-green-200";
-      case "Em Andamento":
+      case t('in_progress'):
         return "bg-orange-100 text-orange-800 border-orange-200";
-      case "A Fazer":
+      case t('to_do'):
         return "bg-gray-100 text-gray-800 border-gray-200";
       default:
         return "";
@@ -182,25 +185,28 @@ export default function DashboardPage() {
           <Link href="/">
             <h1 className="text-lg font-medium text-gray-800">Blimari</h1>
           </Link>
-          <MobileMenu />
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <MobileMenu />
+          </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Olá, {user.displayName || "Explorador"}!
+            {t('hello_explorer', { displayName: user.displayName || "Explorador" })}!
           </h1>
           <Link href="/" passHref>
             <Button className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-              Nova trilha
+              {t('new_trail')}
             </Button>
           </Link>
         </div>
 
         {/* Seu Progresso Section */}
         <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Seu Progresso</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('your_progress')}</h2>
           <Card className="rounded-xl shadow-md border border-gray-200 bg-white p-6">
             <CardContent className="flex flex-col md:flex-row items-center gap-6 p-0">
               <div className="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
@@ -240,12 +246,12 @@ export default function DashboardPage() {
                 {loadingNextLesson ? (
                   <div className="flex items-center text-gray-600">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Carregando próximo passo...
+                    {t('loading_next_step')}
                   </div>
                 ) : nextLesson ? (
                   <>
                     <p className="text-lg font-medium text-gray-700 mb-2">
-                      Próximo Passo: {nextLesson.lessonTitle}
+                      {t('next_step')} {nextLesson.lessonTitle}
                     </p>
                     <Progress
                       value={overallProgress}
@@ -253,21 +259,21 @@ export default function DashboardPage() {
                     />
                     <Link href={`/learning-paths/${nextLesson.learningPathId}/${nextLesson.lessonId}`} passHref>
                       <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                        Continue Learning
+                        {t('continue_learning')}
                       </Button>
                     </Link>
                   </>
                 ) : (
                   <>
                     <p className="text-lg font-medium text-gray-700 mb-2">
-                      Parece que você concluiu todas as suas trilhas!
+                      {t('all_trails_completed')}
                     </p>
                     <p className="text-sm text-gray-600 mb-4">
-                      Que tal criar uma nova trilha de aprendizado para continuar explorando?
+                      {t('create_new_trail_suggestion')}
                     </p>
                     <Link href="/create/sources" passHref>
                       <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                        Criar Nova Trilha
+                        {t('create_new_trail')}
                       </Button>
                     </Link>
                   </>
@@ -279,18 +285,18 @@ export default function DashboardPage() {
 
         {/* Módulos de Aprendizado Section */}
         <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Módulos de Aprendizado</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('learning_modules')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loadingLearningPaths ? (
               <div className="col-span-full flex flex-col items-center justify-center py-8 min-h-[200px]">
                 <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35] mb-2" />
-                <p className="text-gray-600">Carregando trilhas de aprendizado...</p>
+                <p className="text-gray-600">{t('loading_learning_paths')}</p>
               </div>
             ) : learningPaths.length === 0 ? (
               <div className="col-span-full text-center py-8 text-gray-600">
-                <p className="mb-4">Nenhuma trilha de aprendizado encontrada. Comece a criar uma nova!</p>
+                <p className="mb-4">{t('no_learning_paths_found')}</p>
                 <Link href="/create/sources" className="text-[#FF6B35] hover:underline inline-flex items-center gap-1">
-                  Criar Nova Trilha <ChevronRight className="w-4 h-4" />
+                  {t('create_new_trail')} <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             ) : (
@@ -312,15 +318,15 @@ export default function DashboardPage() {
                     <div className="flex flex-col gap-1 text-xs text-gray-500 mb-3">
                       <div className="flex items-center gap-1.5">
                         <BookOpen className="w-3 h-3" />
-                        <span>Tópico: {path.topic}</span>
+                        <span>{t('topic')}: {path.topic}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Award className="w-3 h-3" />
-                        <span>Dificuldade: {path.difficulty}</span>
+                        <span>{t('difficulty')}: {path.difficulty}</span>
                       </div>
                     </div>
                     <Link href={`/learning-paths/${path.id}`} passHref className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1">
-                      Ver Trilha <ChevronRight className="w-3 h-3" />
+                      {t('view_trail')} <ChevronRight className="w-3 h-3" />
                     </Link>
                   </CardContent>
                 </Card>
@@ -331,20 +337,20 @@ export default function DashboardPage() {
 
         {/* Atividade Recente Section */}
         <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Atividade Recente</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('recent_activity')}</h2>
           <Card className="rounded-xl shadow-md border border-gray-200 bg-white">
             <CardContent className="p-6 space-y-4 text-gray-600">
-              <p>Nenhuma atividade recente para mostrar.</p>
+              <p>{t('no_recent_activity')}</p>
             </CardContent>
           </Card>
         </section>
 
         {/* Conteúdo Recomendado Section */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Conteúdo Recomendado</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('recommended_content_section')}</h2>
           <Card className="rounded-xl shadow-md border border-gray-200 bg-white">
             <CardContent className="p-6 space-y-4 text-gray-600">
-              <p>Nenhum conteúdo recomendado no momento.</p>
+              <p>{t('no_recommended_content')}</p>
             </CardContent>
           </Card>
         </section>

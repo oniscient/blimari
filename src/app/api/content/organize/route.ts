@@ -4,13 +4,13 @@ import { ContentItem } from "@/src/types"
 
 export async function POST(request: NextRequest) {
   try {
-    const { contentList, topic, answers } = await request.json()
+    const { contentList, topic, answers, language } = await request.json()
 
     if (!contentList || !Array.isArray(contentList) || !topic || !answers || !Array.isArray(answers)) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
-    const organizedTrail = await geminiService.organizeTrail(contentList, topic, answers)
+    const organizedTrail = await geminiService.organizeTrail(contentList, topic, answers, language)
 
     console.log("API /api/content/organize: Gemini service returned organized trail:", organizedTrail)
 

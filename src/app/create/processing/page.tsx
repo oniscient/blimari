@@ -21,6 +21,7 @@ import { Stepper, Step } from "@/src/components/ui/Stepper"
 import Loader from "@/src/components/ui/loading"
 import { ContentItem, OrganizedTrail, TrailSection, LearningPath } from "@/src/types" // Importar tipos
 import { audioService } from "@/src/services/audio.service";
+import { useTranslation } from 'react-i18next';
 
 interface ProcessingStep {
   id: string
@@ -50,6 +51,7 @@ export default function ProcessingPage() {
   const organizedTrailRef = useRef<OrganizedTrail | null>(null) // Ref para a trilha organizada
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null)
   const [isPopupOpen, setIsPopupOpen] = useState(false)
+  const { t, i18n } = useTranslation();
 
   // Atualizar ref sempre que discoveredContent mudar
   useEffect(() => {
@@ -59,32 +61,32 @@ export default function ProcessingPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([
     {
       id: "search",
-      title: "Buscando Conteúdo",
-      description: "Procurando os melhores recursos nas suas fontes selecionadas",
+      title: t('searching_content'),
+      description: t('searching_resources_description'),
       icon: <Search className="w-6 h-6" />,
       status: "pending",
       progress: 0,
     },
     {
       id: "filter",
-      title: "Filtrando Qualidade",
-      description: "Analisando relevância e qualidade do conteúdo encontrado",
+      title: t('filtering_quality'),
+      description: t('analyzing_relevance_description'),
       icon: <Filter className="w-6 h-6" />,
       status: "pending",
       progress: 0,
     },
     {
       id: "organize",
-      title: "Organizando Trilha",
-      description: "Estruturando o conteúdo em uma sequência lógica de aprendizado",
+      title: t('organizing_trail'),
+      description: t('structuring_content_description'),
       icon: <Download className="w-6 h-6" />,
       status: "pending",
       progress: 0,
     },
     {
       id: "finalize",
-      title: "Finalizando",
-      description: "Preparando sua trilha personalizada de aprendizado",
+      title: t('finalizing'),
+      description: t('preparing_trail_description'),
       icon: <CheckCircle className="w-6 h-6" />,
       status: "pending",
       progress: 0,
@@ -102,24 +104,24 @@ export default function ProcessingPage() {
         const parsedAnswers = JSON.parse(answersParam)
         setAnswers(Array.isArray(parsedAnswers) ? parsedAnswers : Object.values(parsedAnswers))
       } catch (error) {
-        console.error("Error parsing answers:", error)
+        console.error(t('error_parsing_answers'), error)
       }
     }
     if (sourcesParam) {
       try {
         setSources(JSON.parse(sourcesParam))
       } catch (error) {
-        console.error("Error parsing sources:", error)
+        console.error(t('error_parsing_sources'), error)
       }
     }
-  }, [searchParams])
+  }, [searchParams, t])
 
   const processStep = useCallback(
     async (stepIndex: number) => {
       const step = steps[stepIndex]
       if (!step) return
 
-      console.log(`Starting step ${stepIndex}: ${step.id}`)
+      console.log(`${t('starting_step')} ${stepIndex}: ${step.id}`)
 
       // Update step to processing
       setSteps((prev) =>
@@ -135,35 +137,35 @@ export default function ProcessingPage() {
       // Process specific steps
       if (step.id === "search") {
         try {
-          console.log("SEARCH STEP: Fetching content for", { topic, sources, answers })
+          console.log(`${t('search_step_fetching_content')}`, { topic, sources, answers })
           
           const response = await fetch("/api/content/discover", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ topic, sources, answers, userId: user?.id }),
+            body: JSON.stringify({ topic, sources, answers, userId: user?.id, language: i18n.language }),
           })
 
           if (response.ok) {
             const data = await response.json()
             const contentData = data.content || []
-            console.log("SEARCH STEP: Received content", contentData)
+            console.log(`${t('search_step_received_content')}`, contentData)
             
             setDiscoveredContent(contentData)
             discoveredContentRef.current = contentData // Atualizar ref imediatamente
           } else {
-            console.error("SEARCH STEP: API response not ok", response.status, response.statusText)
+            console.error(`${t('search_step_api_not_ok')}`, response.status, response.statusText)
           }
         } catch (error) {
-          console.error("SEARCH STEP: Error discovering content:", error)
+          console.error(`${t('search_step_error_discovering')}`, error)
         }
       } else if (step.id === "filter") {
         try {
           // Usar o ref que tem os dados mais atualizados
           const currentContent = discoveredContentRef.current
-          console.log("FILTER STEP: Current discovered content:", currentContent)
+          console.log(`${t('filter_step_current_discovered_content')}`, currentContent)
 
           if (currentContent.length === 0) {
-            console.warn("FILTER STEP: No content to filter, skipping...")
+            console.warn(`${t('filter_step_no_content_to_filter')}`)
             return
           }
 
@@ -172,18 +174,18 @@ export default function ProcessingPage() {
             topic,
             answers,
           }
-          console.log("FILTER STEP: Sending payload to /api/content/filter", payload)
+          console.log(`${t('filter_step_sending_payload')}`, payload)
 
           const response = await fetch("/api/content/filter", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, language: i18n.language }),
           })
 
           if (response.ok) {
             const data = await response.json()
             const approvedIds = data.approvedContentIds || []
-            console.log("FILTER STEP: Received approved IDs", approvedIds)
+            console.log(`${t('filter_step_received_approved_ids')}`, approvedIds)
 
             setDiscoveredContent((prevContent) =>
               prevContent.map((item) => ({
@@ -192,14 +194,14 @@ export default function ProcessingPage() {
               })),
             )
           } else {
-            console.error("FILTER STEP: API response not ok", response.status, response.statusText)
+            console.error(`${t('filter_step_api_not_ok')}`, response.status, response.statusText)
             // Fallback: approve all if filtering fails
             setDiscoveredContent((prevContent) =>
               prevContent.map((item) => ({ ...item, isApproved: true })),
             )
           }
         } catch (error) {
-          console.error("FILTER STEP: Error filtering content:", error)
+          console.error(`${t('filter_step_error_filtering')}`, error)
           // Fallback: approve all if filtering fails
           setDiscoveredContent((prevContent) =>
             prevContent.map((item) => ({ ...item, isApproved: true })),
@@ -208,10 +210,10 @@ export default function ProcessingPage() {
       } else if (step.id === "organize") {
         try {
           const approvedContent = discoveredContentRef.current.filter((item) => item.isApproved)
-          console.log("ORGANIZE STEP: Approved content for organization:", approvedContent)
+          console.log(`${t('organize_step_approved_content')}`, approvedContent)
 
           if (approvedContent.length === 0) {
-            console.warn("ORGANIZE STEP: No approved content to organize, skipping...")
+            console.warn(`${t('organize_step_no_approved_content')}`)
             return
           }
 
@@ -220,18 +222,18 @@ export default function ProcessingPage() {
             topic,
             answers,
           }
-          console.log("ORGANIZE STEP: Sending payload to /api/content/organize", payload)
+          console.log(`${t('organize_step_sending_payload')}`, payload)
 
           const response = await fetch("/api/content/organize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, language: i18n.language }),
           })
 
           if (response.ok) {
             const data = await response.json()
             const organizedTrailData: OrganizedTrail = data.organizedTrail || { organizedTrail: [] }
-            console.log("ORGANIZE STEP: Received organized trail", organizedTrailData)
+            console.log(`${t('organize_step_received_organized_trail')}`, organizedTrailData)
 
             // Mapear o discoveredContent original para um mapa para fácil acesso por ID
             const contentMap = new Map(discoveredContentRef.current.map(item => [item.id, item]));
@@ -256,22 +258,22 @@ export default function ProcessingPage() {
             organizedTrailRef.current = organizedTrailData; // Atualizar ref
 
           } else {
-            console.error("ORGANIZE STEP: API response not ok", response.status, response.statusText)
+            console.error(`${t('organize_step_api_not_ok')}`, response.status, response.statusText)
             // Fallback: if organization fails, use approved content as a single section
             const approvedContent = discoveredContentRef.current.filter((item) => item.isApproved)
             setOrganizedTrail({
-              organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
+              organizedTrail: [{ sectionTitle: t('recommended_content'), items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
             });
             organizedTrailRef.current = {
-              organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
+              organizedTrail: [{ sectionTitle: t('recommended_content'), items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
             };
           }
         } catch (error) {
-          console.error("ORGANIZE STEP: Error organizing content:", error)
+          console.error(`${t('organize_step_error_organizing')}`, error)
           // Fallback: if organization fails, use approved content as a single section
           const approvedContent = discoveredContentRef.current.filter((item) => item.isApproved)
           const fallbackTrail = {
-            organizedTrail: [{ sectionTitle: "Conteúdo Recomendado", items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
+            organizedTrail: [{ sectionTitle: t('recommended_content'), items: approvedContent.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }],
           };
           setOrganizedTrail(fallbackTrail);
           organizedTrailRef.current = fallbackTrail;
@@ -281,16 +283,16 @@ export default function ProcessingPage() {
           if (discoveredContentRef.current && discoveredContentRef.current.length > 0) {
             let finalOrganizedTrail = organizedTrailRef.current;
             if (!finalOrganizedTrail) {
-              console.warn("FINALIZE STEP: organizedTrail is not set, falling back to discoveredContent.");
-              finalOrganizedTrail = { organizedTrail: [{ sectionTitle: "Trilha Completa", items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
+              console.warn(`${t('finalize_step_organized_trail_not_set')}`);
+              finalOrganizedTrail = { organizedTrail: [{ sectionTitle: t('complete_trail'), items: discoveredContentRef.current.map(item => ({ id: item.id, organizedDescription: item.description || "" })) }] };
             }
 
-            console.log("FINALIZE STEP: User logged in, saving to database...")
+            console.log(`${t('finalize_step_user_logged_in_saving')}`)
             const payload = {
-              title: `Trilha de ${topic}`,
+              title: `${t('personalized_learning_trail_about')} ${topic}`,
               topic,
               difficulty: "beginner",
-              description: `Uma trilha de aprendizado personalizada sobre ${topic}.`,
+              description: `${t('personalized_learning_trail_about')} ${topic}.`,
               organizedTrail: finalOrganizedTrail,
               content: discoveredContentRef.current, // Enviar o conteúdo completo
             }
@@ -302,16 +304,16 @@ export default function ProcessingPage() {
 
             if (response.ok) {
               const data = await response.json()
-              console.log("FINALIZE STEP: Learning path saved to DB:", data.learningPath)
+              console.log(`${t('finalize_step_learning_path_saved')}`, data.learningPath)
             } else {
-              console.error("FINALIZE STEP: API response not ok", response.status, response.statusText)
+              console.error(`${t('finalize_step_api_not_ok')}`, response.status, response.statusText)
               // Do not fallback to local storage, as per requirements
             }
           } else {
-            console.warn("FINALIZE STEP: No content to save, skipping save logic.");
+            console.warn(`${t('finalize_step_no_content_to_save')}`);
           }
         } catch (error) {
-          console.error("FINALIZE STEP: Error finalizing content:", error)
+          console.error(`${t('finalize_step_error_finalizing')}`, error)
           // Do not fallback to local storage, as per requirements
         }
       }
@@ -321,23 +323,23 @@ export default function ProcessingPage() {
         prev.map((s, i) => (i === stepIndex ? { ...s, status: "completed" as const } : s)),
       )
 
-      console.log(`Completed step ${stepIndex}: ${step.id}`)
+      console.log(`${t('completed_step')} ${stepIndex}: ${step.id}`)
       
       // Check if this is the last step to set completion
       if (stepIndex === steps.length - 1) {
         setIsComplete(true);
         audioService.playProcessingCompletedSound(); // Play sound on completion
-        console.log("All steps completed!");
+        console.log(`${t('all_steps_completed')}`);
       }
     },
-    [steps, topic, sources, answers, user],
+    [steps, topic, sources, answers, user, t],
   );
 
   const startProcessing = useCallback(async () => {
     if (hasStarted.current) return
     hasStarted.current = true
 
-    console.log("Starting processing sequence...")
+    console.log(`${t('starting_processing_sequence')}`)
 
     for (let i = 0; i < steps.length; i++) {
       setCurrentStep(i)
@@ -345,20 +347,20 @@ export default function ProcessingPage() {
 
       // Delay extra entre as etapas para garantir que os dados sejam processados
       if (i < steps.length - 1) { // Adicionar delay para todas as etapas, exceto a última
-        console.log(`Waiting extra time after step ${steps[i].id}...`)
+        console.log(`${t('waiting_extra_time_after_step')} ${steps[i].id}...`)
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
     }
 
-    console.log("Processing sequence completed!")
-  }, [processStep, steps.length])
+    console.log(`${t('processing_sequence_completed')}`)
+  }, [processStep, steps.length, t])
 
   useEffect(() => {
     if (topic && sources.length > 0 && !hasStarted.current) {
-      console.log("Initializing processing with:", { topic, sources: sources.length, answers: answers.length })
+      console.log(`${t('initializing_processing_with')}`, { topic, sources: sources.length, answers: answers.length })
       startProcessing()
     }
-  }, [topic, sources, startProcessing])
+  }, [topic, sources, startProcessing, answers.length, t])
 
   const handleContinue = () => {
     router.push("/dashboard")
@@ -379,7 +381,7 @@ export default function ProcessingPage() {
       <div className="min-h-screen bg-gradient-to-br from-white via-orange-50/30 to-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-[#FF6B35]" />
-          <p className="text-[#718096]">Carregando...</p>
+          <p className="text-[#718096]">{t('loading')}</p>
         </div>
       </div>
     )
@@ -392,13 +394,13 @@ export default function ProcessingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#2D3748]">Criando sua trilha de aprendizado</h1>
+              <h1 className="text-2xl font-bold text-[#2D3748]">{t('creating_learning_path')}</h1>
               <p className="text-[#718096] mt-1">
-                Estamos organizando o melhor conteúdo sobre <strong>{topic}</strong>
+                {t('organizing_best_content_about')} <strong>{topic}</strong>
               </p>
             </div>
             <div className="text-sm text-[#718096] bg-white px-3 py-1 rounded-full border border-[#E2E8F0]">
-              Passo 3 de 3
+              {t('step_3_of_3')}
             </div>
           </div>
         </div>
@@ -419,7 +421,7 @@ export default function ProcessingPage() {
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Processing Steps */}
           <div>
-            <h2 className="text-xl font-bold text-[#2D3748] mb-8">Progresso da Criação</h2>
+            <h2 className="text-xl font-bold text-[#2D3748] mb-8">{t('creation_progress')}</h2>
             <Stepper steps={steps} currentStep={currentStep} />
 
             {isComplete && (
@@ -430,16 +432,16 @@ export default function ProcessingPage() {
               >
                 <div className="flex items-center justify-center gap-3 mb-3">
                   <CheckCircle className="w-6 h-6 text-green-600" />
-                  <h3 className="font-bold text-green-800 text-lg">Trilha Criada com Sucesso!</h3>
+                  <h3 className="font-bold text-green-800 text-lg">{t('trail_created_successfully')}</h3>
                 </div>
                 <p className="text-green-700 mb-4">
-                  Sua trilha personalizada de <strong>{topic}</strong> está pronta.
+                  {t('your_personalized_trail_about')} <strong>{topic}</strong> {t('is_ready')}
                 </p>
                 <Button
                   onClick={handleContinue}
                   className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white px-6 py-3 rounded-full font-medium transition-colors duration-200"
                 >
-                  Continuar para o Dashboard
+                  {t('continue_to_dashboard')}
                 </Button>
               </motion.div>
             )}
@@ -448,7 +450,7 @@ export default function ProcessingPage() {
           {/* Content Preview */}
           <div>
             <h2 className="text-xl font-bold text-[#2D3748] mb-8">
-              {organizedTrail ? "Sua Trilha de Aprendizado" : "Conteúdo Descoberto"}
+              {organizedTrail ? t('your_learning_trail') : t('discovered_content')}
             </h2>
             {organizedTrail && organizedTrail.organizedTrail.length > 0 ? (
               organizedTrail.organizedTrail.map((section: TrailSection, sectionIndex: number) => (
@@ -512,7 +514,7 @@ export default function ProcessingPage() {
                 {discoveredContent.length === 0 && currentStep >= 0 && (
                   <div className="text-center py-12 col-span-full flex flex-col items-center justify-center">
                     <Loader />
-                    <p className="text-[#718096] mt-4">Buscando conteúdo...</p>
+                    <p className="text-[#718096] mt-4">{t('searching_content_ellipsis')}</p>
                   </div>
                 )}
               </div>

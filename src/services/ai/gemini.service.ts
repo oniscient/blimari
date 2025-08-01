@@ -15,15 +15,17 @@ export class GeminiService {
 
   async generateQuestions(
     topic: string,
+    language: string,
     model: GeminiModel = "flash",
   ): Promise<any[]> {
     const prompt = `
-    Gere exatamente 3 perguntas personalizadas para alguém que quer aprender sobre "${topic}".
+    Generate exactly 3 personalized questions for someone who wants to learn about "${topic}".
+    The questions should be in ${language}.
     
-    As perguntas devem ajudar a entender:
-    1. Nível de experiência atual
-    2. Estilo de aprendizado preferido
-    3. Objetivo específico com o tópico
+    The questions should help to understand:
+    1. Current experience level
+    2. Preferred learning style
+    3. Specific goal with the topic
     `
 
     try {
@@ -61,28 +63,30 @@ export class GeminiService {
   async generateInsights(
     answers: string[],
     topic: string,
+    language: string,
     model: GeminiModel = "lite",
     qlooProfile?: QlooProfile, // Added optional qlooProfile
   ) {
     let qlooContext = ""
     if (qlooProfile && qlooProfile.preferences) {
       qlooContext = `
-      Com base no perfil cultural Qloo do usuário, que inclui preferências como: ${JSON.stringify(qlooProfile.preferences)},
-      e estilo de comunicação: ${JSON.stringify(qlooProfile.communicationStyle)}.
+      Based on the user's Qloo cultural profile, which includes preferences like: ${JSON.stringify(qlooProfile.preferences)},
+      and communication style: ${JSON.stringify(qlooProfile.communicationStyle)}.
       `
     }
 
     const prompt = `
-    Com base nas seguintes respostas sobre aprendizado de "${topic}" e nas fontes de conteúdo disponíveis (youtube, github, web, books):
+    Based on the following answers about learning "${topic}" and the available content sources (youtube, github, web, books):
     
-    Resposta 1: ${answers[0] || "Não respondida"}
-    Resposta 2: ${answers[1] || "Não respondida"}
-    Resposta 3: ${answers[2] || "Não respondida"}
+    Answer 1: ${answers[0] || "Not answered"}
+    Answer 2: ${answers[1] || "Not answered"}
+    Answer 3: ${answers[2] || "Not answered"}
     
     ${qlooContext}
     
-    Gere um insight personalizado sobre o perfil de aprendizado do usuário e recomende as 2 ou 3 fontes de pesquisa mais adequadas para ele aprender sobre "${topic}".
-    O Insight deve ser muito curto e directo e útil ao usuário. Não diga o óbvio.
+    Generate a personalized insight about the user's learning profile and recommend the 2 or 3 most suitable research sources for them to learn about "${topic}".
+    The insight should be very short, direct, and useful to the user. Do not state the obvious.
+    The response should be in ${language}.
     `
 
     try {
@@ -116,6 +120,7 @@ export class GeminiService {
     contentList: { id: string; title: string; description: string }[],
     topic: string,
     answers: string[],
+    language: string,
     model: GeminiModel = "pro",
     qlooProfile?: QlooProfile, // Added optional qlooProfile
   ): Promise<string[]> {
@@ -133,8 +138,8 @@ export class GeminiService {
     let qlooContext = ""
     if (qlooProfile && qlooProfile.preferences) {
       qlooContext = `
-      Considere também o perfil cultural Qloo do usuário, que inclui preferências como: ${JSON.stringify(qlooProfile.preferences)},
-      e estilo de comunicação: ${JSON.stringify(qlooProfile.communicationStyle)}.
+      Also consider the user's Qloo cultural profile, which includes preferences like: ${JSON.stringify(qlooProfile.preferences)},
+      and communication style: ${JSON.stringify(qlooProfile.communicationStyle)}.
       `
     }
 
@@ -143,21 +148,22 @@ export class GeminiService {
       .join("\n\n")
 
     const prompt = `
-    Você é um agente de IA especializado em filtrar conteúdo educacional.
-    Com base no tópico "${topic}" e nas seguintes respostas do usuário sobre suas preferências de aprendizado:
-    ${answers.map((ans, i) => `Resposta ${i + 1}: ${ans}`).join("\n")}
+    You are an AI agent specialized in filtering educational content.
+    Based on the topic "${topic}" and the following user answers about their learning preferences:
+    ${answers.map((ans, i) => `Answer ${i + 1}: ${ans}`).join("\n")}
     
     ${qlooContext}
 
-    Analise a seguinte lista de conteúdos e identifique quais são relevantes e de qualidade para o usuário.
-    Considere a relevância para o tópico, a descrição e a adequação ao perfil de aprendizado inferido pelas respostas.
-    Deve ter pelo menos um conteúdo de cada fonte disponibilizada (ex: Video, Article, Tutorial, etc)
+    Analyze the following list of content and identify which are relevant and of high quality for the user.
+    Consider the relevance to the topic, the description, and the suitability for the learning profile inferred from the answers.
+    There must be at least one piece of content from each available source (e.g., Video, Article, Tutorial, etc.).
+    The response should be in ${language}.
 
-    Lista de Conteúdos:
+    Content List:
     ${contentDescriptions}
 
-    Retorne um JSON contendo apenas uma lista dos IDs dos conteúdos que você aprova.
-    Exemplo:
+    Return a JSON object containing only a list of the IDs of the content you approve.
+    Example:
     {
       "approvedContentIds": ["id1", "id3", "id5"]
     }
@@ -194,6 +200,7 @@ export class GeminiService {
     contentList: ContentItem[],
     topic: string,
     answers: string[],
+    language: string,
     model: GeminiModel = "flash",
     qlooProfile?: QlooProfile, // Added optional qlooProfile
   ): Promise<OrganizedTrail> {
@@ -211,8 +218,8 @@ export class GeminiService {
     let qlooContext = ""
     if (qlooProfile && qlooProfile.preferences) {
       qlooContext = `
-      Considere também o perfil cultural Qloo do usuário, que inclui preferências como: ${JSON.stringify(qlooProfile.preferences)},
-      e estilo de comunicação: ${JSON.stringify(qlooProfile.communicationStyle)}.
+      Also consider the user's Qloo cultural profile, which includes preferences like: ${JSON.stringify(qlooProfile.preferences)},
+      and communication style: ${JSON.stringify(qlooProfile.communicationStyle)}.
       `
     }
 
@@ -221,34 +228,35 @@ export class GeminiService {
       .join("\n\n")
 
     const prompt = `
-    Você é um agente de IA especializado em organizar trilhas de aprendizado.
-    Com base no tópico "${topic}", nas seguintes respostas do usuário sobre suas preferências de aprendizado:
-    ${answers.map((ans, i) => `Resposta ${i + 1}: ${ans}`).join("\n")}
+    You are an AI agent specialized in organizing learning paths.
+    Based on the topic "${topic}", the following user answers about their learning preferences:
+    ${answers.map((ans, i) => `Answer ${i + 1}: ${ans}`).join("\n")}
     
     ${qlooContext}
 
-    E na seguinte lista de conteúdos filtrados:
+    And the following list of filtered content:
     ${contentDescriptions}
 
-    Organize este conteúdo em uma trilha de aprendizado lógica e sequencial.
-    Divida a trilha em seções (ex: "Introdução", "Conceitos Fundamentais", "Tópicos Avançados", "Projetos Práticos") e liste os IDs dos itens de conteúdo dentro de cada seção, juntamente com uma nova descrição concisa e otimizada para a trilha.
-    A ordem dos itens dentro de cada seção e a ordem das seções devem ser otimizadas para um aprendizado progressivo e eficaz.
-    Retorne um JSON com a estrutura da trilha organizada.
+    Organize this content into a logical and sequential learning path.
+    Divide the path into sections (e.g., "Introduction", "Fundamental Concepts", "Advanced Topics", "Practical Projects") and list the content item IDs within each section, along with a new concise and optimized description for the path.
+    The order of items within each section and the order of the sections should be optimized for progressive and effective learning.
+    The response should be in ${language}.
+    Return a JSON with the organized path structure.
 
-    Exemplo de formato de saída:
+    Example of output format:
     {
       "organizedTrail": [
         {
-          "sectionTitle": "Introdução",
+          "sectionTitle": "Introduction",
           "items": [
-            { "id": "id_do_item1", "organizedDescription": "Nova descrição para o item 1" },
-            { "id": "id_do_item2", "organizedDescription": "Nova descrição para o item 2" }
+            { "id": "item_id_1", "organizedDescription": "New description for item 1" },
+            { "id": "item_id_2", "organizedDescription": "New description for item 2" }
           ]
         },
         {
-          "sectionTitle": "Conceitos Fundamentais",
+          "sectionTitle": "Fundamental Concepts",
           "items": [
-            { "id": "id_do_item3", "organizedDescription": "Nova descrição para o item 3" }
+            { "id": "item_id_3", "organizedDescription": "New description for item 3" }
           ]
         }
       ]

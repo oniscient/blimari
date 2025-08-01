@@ -17,6 +17,7 @@ import {
   Lightbulb,
 } from "lucide-react"
 import { Switch } from "@/src/components/ui/switch"
+import { useTranslation } from 'react-i18next';
 
 interface Source {
   id: string
@@ -37,7 +38,7 @@ const sources: Source[] = [
   {
     id: "youtube",
     name: "YouTube",
-    description: "Vídeos tutoriais e cursos práticos",
+    description: "tutorial_videos_and_practical_courses",
     icon: <Youtube className="w-6 h-6" />,
     color: "text-red-600",
     bgColor: "bg-red-50",
@@ -46,7 +47,7 @@ const sources: Source[] = [
   {
     id: "github",
     name: "GitHub",
-    description: "Repositórios e projetos open source",
+    description: "open_source_repositories_and_projects",
     icon: <Github className="w-6 h-6" />,
     color: "text-gray-800",
     bgColor: "bg-gray-50",
@@ -55,7 +56,7 @@ const sources: Source[] = [
   {
     id: "web",
     name: "Web Articles",
-    description: "Artigos e blogs especializados",
+    description: "specialized_articles_and_blogs",
     icon: <Globe className="w-6 h-6" />,
     color: "text-blue-600",
     bgColor: "bg-blue-50",
@@ -64,7 +65,7 @@ const sources: Source[] = [
   {
     id: "books",
     name: "Books & Docs",
-    description: "Documentações oficiais e livros técnicos",
+    description: "official_documentation_and_technical_books",
     icon: <BookOpen className="w-6 h-6" />,
     color: "text-amber-600",
     bgColor: "bg-amber-50",
@@ -82,6 +83,7 @@ export default function SourcesPage() {
   const [insights, setInsights] = useState<Insight | null>(null)
   const [isLoadingInsights, setIsLoadingInsights] = useState(false)
   const [useAISuggestions, setUseAISuggestions] = useState(true) // Default to true
+  const { t } = useTranslation();
 
   useEffect(() => {
     const topicParam = searchParams.get("topic")
@@ -101,10 +103,10 @@ export default function SourcesPage() {
           setAnswers(answersArray)
         }
       } catch (error) {
-        console.error("Error parsing answers:", error)
+        console.error(t('error_parsing_answers'), error)
       }
     }
-  }, [searchParams, answers]) // Keep answers in dependencies
+  }, [searchParams, answers, t]) // Keep answers in dependencies
 
   useEffect(() => {
     if (answers.length > 0 && !insights && !isLoadingInsights) {
@@ -147,20 +149,20 @@ export default function SourcesPage() {
         } else {
           // Fallback insights
           setInsights({
-            insightText: "Não foi possível gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+            insightText: t('could_not_generate_insights'),
             recommendedSources: [],
           })
         }
       } else {
         setInsights({
-          insightText: "Não foi possível gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+          insightText: t('could_not_generate_insights'),
           recommendedSources: [],
         })
       }
     } catch (error) {
-      console.error("Error generating insights:", error)
+      console.error(t('error_generating_insights'), error)
       setInsights({
-        insightText: "Erro ao gerar insights personalizados. Por favor, selecione as fontes manualmente.",
+        insightText: t('could_not_generate_insights'),
         recommendedSources: [],
       })
     } finally {
@@ -203,13 +205,13 @@ export default function SourcesPage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#2D3748]">Escolha suas fontes de conteúdo</h1>
+              <h1 className="text-2xl font-bold text-[#2D3748]">{t('choose_content_sources')}</h1>
               <p className="text-[#718096] mt-1">
-                Selecione onde você prefere aprender sobre <strong>{topic}</strong>
+                {t('select_where_to_learn')} <strong>{topic}</strong>
               </p>
             </div>
             <div className="text-sm text-[#718096] bg-white px-3 py-1 rounded-full border border-[#E2E8F0]">
-              Passo 2 de 3
+              {t('step_2_of_3')}
             </div>
           </div>
         </div>
@@ -221,9 +223,9 @@ export default function SourcesPage() {
           {/* Sources Selection */}
           <div className="lg:col-span-2">
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-[#2D3748] mb-2">Fontes de Conteúdo</h2>
+              <h2 className="text-xl font-bold text-[#2D3748] mb-2">{t('content_sources')}</h2>
               <p className="text-[#718096]">
-                Selecione pelo menos uma fonte. Recomendamos escolher 2-3 para uma trilha mais rica.
+                {t('select_at_least_one_source')}
               </p>
             </div>
 
@@ -258,7 +260,7 @@ export default function SourcesPage() {
                   {/* Source Content */}
                   <div className={`${source.color} mb-4`}>{source.icon}</div>
                   <h3 className="font-bold text-[#2D3748] text-lg mb-2">{source.name}</h3>
-                  <p className="text-[#718096] text-sm leading-relaxed">{source.description}</p>
+                  <p className="text-[#718096] text-sm leading-relaxed">{t(source.description)}</p>
                 </motion.div>
               ))}
             </div>
@@ -282,7 +284,7 @@ export default function SourcesPage() {
                   <div className="flex items-start gap-3">
                     <Lightbulb className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-medium text-[#2D3748] mb-1">Insight Personalizado</h4>
+                      <h4 className="font-medium text-[#2D3748] mb-1">{t('personalized_insight')}</h4>
                       <p className="text-sm text-[#718096] leading-relaxed">{insights.insightText}</p>
                     </div>
                   </div>
@@ -292,11 +294,11 @@ export default function SourcesPage() {
                       <div className="flex items-start gap-3">
                         <Sparkles className="w-5 h-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
                         <div>
-                          <h4 className="font-medium text-[#2D3748] mb-1">Fontes Recomendadas</h4>
+                          <h4 className="font-medium text-[#2D3748] mb-1">{t('recommended_sources')}</h4>
                           <p className="text-sm text-[#718096]">
                             {insights.recommendedSources
-                              .map((sourceId) => sources.find((s) => s.id === sourceId)?.name || sourceId)
-                              .join(", ")}
+                                .map((sourceId) => sources.find((s) => s.id === sourceId)?.name || sourceId)
+                                .join(", ")}
                           </p>
                         </div>
                       </div>
@@ -304,14 +306,14 @@ export default function SourcesPage() {
                   )}
 
                   <div className="flex items-center justify-between pt-4 border-t border-[#F1F5F9]">
-                    <span className="text-sm font-medium text-[#2D3748]">Usar sugestões da IA</span>
+                    <span className="text-sm font-medium text-[#2D3748]">{t('use_ai_suggestions')}</span>
                     <Switch checked={useAISuggestions} onCheckedChange={setUseAISuggestions} />
                   </div>
                 </div>
               ) : (
                 <div className="text-center text-[#718096]">
                   <Sparkles className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Gerando insights personalizados...</p>
+                  <p className="text-sm">{t('generating_personalized_insights')}</p>
                 </div>
               )}
             </div>
@@ -325,14 +327,14 @@ export default function SourcesPage() {
             className="flex items-center gap-2 px-6 py-3 text-[#718096] hover:text-[#2D3748] transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
-            Voltar
+            {t('back')}
           </button>
 
           <div className="text-center">
             <p className="text-sm text-[#718096] mb-2">
               {selectedSources.length === 0
-                ? "Selecione pelo menos uma fonte"
-                : `${selectedSources.length} fonte${selectedSources.length > 1 ? "s" : ""} selecionada${selectedSources.length > 1 ? "s" : ""}`}
+                ? t('select_at_least_one_source_message')
+                : `${selectedSources.length} ${selectedSources.length > 1 ? t('sources_selected') : t('source_selected')}`}
             </p>
           </div>
 
@@ -345,7 +347,7 @@ export default function SourcesPage() {
                 : "bg-[#F1F5F9] text-[#A0ADB8] cursor-not-allowed"
             }`}
           >
-            Continuar
+            {t('continue')}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
