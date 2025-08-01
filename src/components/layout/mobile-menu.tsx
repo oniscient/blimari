@@ -7,6 +7,7 @@ import { Home, PlusCircle, LayoutDashboard, BookOpen, HelpCircle, Info, Lock } f
 import AnimatedHamburger from "../ui/AnimatedHamburger"
 import Link from "next/link"
 import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from "../LanguageSwitcher";
 
 export function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -27,8 +28,6 @@ export function MobileMenu() {
   const navItems = [
     { name: t('new_trail'), href: "/create/questions", icon: PlusCircle },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: t('my_trails'), href: "/path/123", icon: BookOpen }, // Placeholder
-    { name: t('quizzes'), href: "/quiz/123", icon: Lock }, // Placeholder
   ]
 
   return (
@@ -107,6 +106,7 @@ export function MobileMenu() {
             </ul>
 
             <div className="mt-auto pt-8 border-t border-[#F1F5F9] space-y-4">
+              <LanguageSwitcher />
               <Link
                 href="#"
                 onClick={toggleMenu}

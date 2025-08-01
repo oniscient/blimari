@@ -27,7 +27,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { MobileMenu } from "@/src/components/layout/mobile-menu";
-import LanguageSwitcher from "@/src/components/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
 
 import { cn } from "@/src/lib/utils";
@@ -186,7 +185,6 @@ export default function DashboardPage() {
             <h1 className="text-lg font-medium text-gray-800">Blimari</h1>
           </Link>
           <div className="flex items-center gap-4">
-            <LanguageSwitcher />
             <MobileMenu />
           </div>
         </div>
@@ -204,84 +202,6 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Seu Progresso Section */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('your_progress')}</h2>
-          <Card className="rounded-xl shadow-md border border-gray-200 bg-white p-6">
-            <CardContent className="flex flex-col md:flex-row items-center gap-6 p-0">
-              <div className="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
-                <svg className="w-full h-full" viewBox="0 0 100 100">
-                  <circle
-                    className="text-gray-200"
-                    strokeWidth="10"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                  />
-                  <circle
-                    className="text-orange-500"
-                    strokeWidth="10"
-                    strokeDasharray={2 * Math.PI * 40}
-                    strokeDashoffset={2 * Math.PI * 40 * (1 - overallProgress / 100)}
-                    strokeLinecap="round"
-                    stroke="url(#progressGradient)"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                    style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
-                  />
-                  <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FF8A65" />
-                      <stop offset="100%" stopColor="#FF6B35" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span className="absolute text-sm font-bold text-gray-800">{overallProgress}%</span>
-              </div>
-              <div className="flex-1 w-full">
-                {loadingNextLesson ? (
-                  <div className="flex items-center text-gray-600">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    {t('loading_next_step')}
-                  </div>
-                ) : nextLesson ? (
-                  <>
-                    <p className="text-lg font-medium text-gray-700 mb-2">
-                      {t('next_step')} {nextLesson.lessonTitle}
-                    </p>
-                    <Progress
-                      value={overallProgress}
-                      className="h-3 bg-orange-100 [&>*]:bg-gradient-to-r [&>*]:from-[#FF6B35] [&>*]:to-[#E55A2B]"
-                    />
-                    <Link href={`/learning-paths/${nextLesson.learningPathId}/${nextLesson.lessonId}`} passHref>
-                      <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                        {t('continue_learning')}
-                      </Button>
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-lg font-medium text-gray-700 mb-2">
-                      {t('all_trails_completed')}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {t('create_new_trail_suggestion')}
-                    </p>
-                    <Link href="/create/sources" passHref>
-                      <Button className="mt-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white rounded-full font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-200">
-                        {t('create_new_trail')}
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
 
         {/* Módulos de Aprendizado Section */}
         <section className="mb-10">

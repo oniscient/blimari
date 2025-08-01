@@ -1,25 +1,26 @@
 "use client"
 
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'next/navigation';
+import { Globe } from 'lucide-react';
 
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
-  const router = useRouter();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
-    router.push(`/${lng}`);
   };
 
   return (
-    <div>
-      <button onClick={() => changeLanguage('en')} disabled={i18n.language === 'en'}>
-        English
-      </button>
-      <button onClick={() => changeLanguage('pt')} disabled={i18n.language === 'pt'}>
-        Português
-      </button>
+    <div className="flex items-center gap-3 p-3 rounded-lg text-[#718096] hover:bg-[#F1F5F9] transition-colors duration-200">
+      <Globe className="h-5 w-5" />
+      <select
+        value={i18n.language}
+        onChange={(e) => changeLanguage(e.target.value)}
+        className="bg-transparent focus:outline-none font-medium"
+      >
+        <option value="en">English</option>
+        <option value="pt">Português</option>
+      </select>
     </div>
   );
 };
