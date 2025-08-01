@@ -169,6 +169,14 @@ export default function DashboardPage() {
     }
   };
 
+  const getNextLessonThumbnail = (path: LearningPath) => {
+    if (!path.content || path.content.length === 0) {
+      return path.thumbnail || '/placeholder.svg';
+    }
+    const nextLesson = path.content.find(item => !item.isCompleted);
+    return nextLesson?.thumbnail || path.thumbnail || '/placeholder.svg';
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -224,7 +232,7 @@ export default function DashboardPage() {
                 <Card key={path.id} className="relative rounded-xl shadow-md border border-gray-200 bg-white overflow-hidden">
                   <div className="w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden rounded-t-xl">
                     <img
-                      src={path.thumbnail || '/placeholder.svg'}
+                      src={getNextLessonThumbnail(path)}
                       alt={path.title || 'Learning path thumbnail'}
                       className="w-full h-full object-cover"
                     />

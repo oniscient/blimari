@@ -140,12 +140,45 @@ export const db = {
 
   async getLearningPathsByUserId(userId: string) {
     const paths = await sql`
-    SELECT id, user_id as "userId", title, topic, difficulty, total_content as "totalContent", completed_content as "completedContent", estimated_duration as "estimatedDuration", cultural_profile_id as "culturalProfileId", status, created_at as "createdAt", updated_at as "updatedAt", organized_trail as "organizedTrail", progress
-    FROM learning_paths
-    WHERE user_id = ${userId}
-    ORDER BY updated_at DESC
-  `
-    return paths as LearningPath[]
+      WITH path_content_agg AS (
+        SELECT
+          path_id,
+          json_agg(
+            json_build_object(
+              'id', id,
+              'title', title,
+              'url', url,
+              'contentType', content_type,
+              'isCompleted', is_completed,
+              'thumbnail', thumbnail,
+              'orderIndex', order_index
+            ) ORDER BY order_index
+          ) AS content
+        FROM path_content
+        GROUP BY path_id
+      )
+      SELECT
+        lp.id,
+        lp.user_id as "userId",
+        lp.title,
+        lp.topic,
+        lp.difficulty,
+        lp.total_content as "totalContent",
+        lp.completed_content as "completedContent",
+        lp.estimated_duration as "estimatedDuration",
+        lp.cultural_profile_id as "culturalProfileId",
+        lp.status,
+        lp.created_at as "createdAt",
+        lp.updated_at as "updatedAt",
+        lp.organized_trail as "organizedTrail",
+        lp.progress,
+        COALESCE(pca.content, '[]'::json) as content
+      FROM learning_paths lp
+      LEFT JOIN path_content_agg pca ON lp.id = pca.path_id
+      WHERE lp.user_id = ${userId}
+      ORDER BY lp.updated_at DESC;
+    `;
+    return paths as LearningPath[];
   },
 
   async updateLearningPathProgress(pathId: string, progress: number, completedContent?: number) {

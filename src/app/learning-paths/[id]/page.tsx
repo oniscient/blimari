@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { audioService } from '@/src/services/audio.service';
+import { useTranslation } from 'react-i18next';
 
 interface LearningPathPageProps {
   params: {
@@ -23,6 +24,7 @@ interface LearningPathPageProps {
 }
 
 const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
+  const { t } = useTranslation();
   const { id: learningPathId } = params;
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -209,7 +211,7 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
                                   href={contentItem.id.startsWith('http') ? `/learning-paths/${learningPathId}/view?contentUrl=${encodeURIComponent(contentItem.id)}` : `/learning-paths/${learningPathId}/${contentItem.id}`}
                                   className="text-sm font-medium text-[#FF6B35] hover:text-[#E55A2B] transition-colors duration-200 flex items-center gap-1"
                                 >
-                                  Acessar Conteúdo
+                                  {t('access_content')}
                                   <ArrowRight className="w-3 h-3" />
                                 </Link>
                               )}
