@@ -110,18 +110,22 @@ export const db = {
         for (let i = 0; i < contentItems.length; i++) {
           const item = contentItems[i];
           const contentQuery = tx`
-            INSERT INTO path_content (id, path_id, title, url, content_type, duration_minutes, order_index, is_completed, source, created_at)
+            INSERT INTO path_content (id, path_id, title, url, content_type, duration_minutes, order_index, is_completed, source, created_at, discovery_id, description, thumbnail, metadata)
             VALUES (
               ${uuidv4()},
               ${newId},
               ${item.title},
               ${item.url},
               ${item.contentType || item.type},
-              ${item.durationMinutes || null},
+              ${item.duration || null},
               ${i},
               false,
               ${item.source},
-              NOW()
+              NOW(),
+              ${item.id},
+              ${item.description || null},
+              ${item.metadata?.thumbnails?.high?.url || null},
+              ${item.metadata ? JSON.stringify(item.metadata) : null}
             )
           `;
           queries.push(contentQuery);
@@ -204,7 +208,7 @@ export const db = {
     const result = await sql`
       SELECT
         lp.id, lp.user_id as "userId", lp.title, lp.topic, lp.difficulty, lp.total_content as "totalContent", lp.completed_content as "completedContent", lp.estimated_duration as "estimatedDuration", lp.cultural_profile_id as "culturalProfileId", lp.status, lp.created_at as "createdAt", lp.updated_at as "updatedAt", lp.organized_trail as "organizedTrail", lp.progress,
-        pc.id as content_id, pc.path_id as content_path_id, pc.title as content_title, pc.url as content_url, pc.content_type as content_type, pc.duration_minutes as content_duration_minutes, pc.order_index as content_order_index, pc.is_completed as content_is_completed, pc.completed_at as content_completed_at, pc.cultural_enhancements as content_cultural_enhancements, pc.source as content_source, pc.created_at as content_created_at
+        pc.id as content_id, pc.path_id as content_path_id, pc.title as content_title, pc.url as content_url, pc.content_type as content_type, pc.duration_minutes as content_duration_minutes, pc.order_index as content_order_index, pc.is_completed as content_is_completed, pc.completed_at as content_completed_at, pc.cultural_enhancements as content_cultural_enhancements, pc.source as content_source, pc.created_at as content_created_at, pc.discovery_id as content_discovery_id, pc.description as content_description, pc.thumbnail as content_thumbnail, pc.metadata as content_metadata
       FROM learning_paths lp
       LEFT JOIN path_content pc ON lp.id = pc.path_id
       WHERE lp.id = ${id}
@@ -238,8 +242,10 @@ export const db = {
       if (row.content_id) {
         learningPath.content?.push({
           id: row.content_id,
+          discoveryId: row.content_discovery_id,
           pathId: row.content_path_id,
           title: row.content_title,
+          description: row.content_description,
           url: row.content_url,
           contentType: row.content_type,
           durationMinutes: row.content_duration_minutes,
@@ -249,9 +255,11 @@ export const db = {
           culturalEnhancements: row.content_cultural_enhancements,
           source: row.content_source,
           createdAt: row.content_created_at,
-          type: row.content_type, // Assuming content_type can also be used for 'type'
-          culturalScore: row.content_cultural_score || 0, // Default to 0 if not in query
-          qualityScore: row.content_quality_score || 0, // Default to 0 if not in query
+          type: row.content_type,
+          thumbnail: row.content_thumbnail,
+          metadata: row.content_metadata,
+          culturalScore: row.content_cultural_score || 0,
+          qualityScore: row.content_quality_score || 0,
         });
       }
     });

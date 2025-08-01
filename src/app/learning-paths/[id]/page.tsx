@@ -95,7 +95,7 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
   const findContentItem = (itemId: string): ContentItem | undefined => {
     // Ensure learningPath.content is treated as an array
     const content = Array.isArray(learningPath?.content) ? learningPath.content : [];
-    return content.find((c: ContentItem) => c.id === itemId);
+    return content.find((c: ContentItem) => c.discoveryId === itemId);
   };
 
   const getContentTypeIcon = (contentType: string) => {
@@ -194,10 +194,10 @@ const LearningPathPage: React.FC<LearningPathPageProps> = ({ params }) => {
                               </div>
                               <div className="absolute top-4 right-4 z-10">
                                 <Checkbox
-                                  id={`item-${item.id}`}
+                                  id={`item-${contentItem?.id}`}
                                   checked={isCompleted}
-                                  onCheckedChange={(checked) => handleProgressChange(item.id, !!checked)}
-                                  disabled={updatingContent === item.id}
+                                  onCheckedChange={(checked) => contentItem && handleProgressChange(contentItem.id, !!checked)}
+                                  disabled={updatingContent === contentItem?.id}
                                   className="w-5 h-5 rounded-full border-gray-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                                 />
                               </div>

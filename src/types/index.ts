@@ -55,6 +55,7 @@ export interface LearningPath {
 export interface ContentItem {
   // Mapeado de PathContent no seu schema
   id: string
+  discoveryId?: string // Unique ID from the discovery phase
   pathId?: string // Made optional for initial discovery
   title: string
   url: string
