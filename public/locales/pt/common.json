@@ -118,11 +118,8 @@
   "not_found": "NÃO ENCONTRADO",
   "access_content": "Acessar Conteúdo",
   "loading_content": "Carregando conteúdo...",
-  "oops_something_went_wrong": "Ops! Algo deu errado",
   "back_to_trail": "Voltar para a Trilha",
   "content_not_found": "Conteúdo não encontrado",
   "previous": "Anterior",
-  "incomplete": "Incompleto",
-  "completed": "Concluído",
-  "next": "Próximo"
+  "incomplete": "Incompleto"
 }

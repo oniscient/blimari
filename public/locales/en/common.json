@@ -108,7 +108,6 @@
   "loading_learning_paths": "Loading learning paths...",
   "topic": "Topic:",
   "difficulty": "Difficulty:",
-  "completed": "Completed",
   "in_progress": "In Progress",
   "to_do": "To Do",
   "my_trails": "My Trails",
@@ -118,11 +117,9 @@
   "not_found": "NOT FOUND",
   "access_content": "Access Content",
   "loading_content": "Loading content...",
-  "oops_something_went_wrong": "Oops! Something went wrong",
   "back_to_trail": "Back to Trail",
   "content_not_found": "Content not found",
   "previous": "Previous",
   "incomplete": "Incomplete",
-  "completed": "Completed",
-  "next": "Next"
+  "completed": "Completed"
 }

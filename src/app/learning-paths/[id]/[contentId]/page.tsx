@@ -79,7 +79,13 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
       const result: APIResponse<LearningPath> = await response.json();
       if (response.ok && result.success && result.data) {
         setLearningPath(result.data);
-        setContentItem(result.data.content?.find(c => c.id === contentId) || null);
+        // Directly update the contentItem's isCompleted status in local state
+        setContentItem(prevItem => {
+          if (prevItem) {
+            return { ...prevItem, isCompleted: isCompleted };
+          }
+          return null;
+        });
         if (isCompleted) {
           audioService.playContentPathDoneSound();
         }
