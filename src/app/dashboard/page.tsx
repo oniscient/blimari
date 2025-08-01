@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { MobileMenu } from "@/src/components/layout/mobile-menu";
 import { useTranslation } from 'react-i18next';
+import Loader from "@/src/components/ui/loading";
 
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -82,6 +83,15 @@ export default function DashboardPage() {
     return (
       <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
         <svg className="w-full h-full" viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            className="text-white/80"
+            strokeWidth={strokeWidth}
+            stroke="currentColor"
+            fill="currentColor"
+            r={radius}
+            cx={size / 2}
+            cy={size / 2}
+          />
           <circle
             className="text-gray-200"
             strokeWidth={strokeWidth}
@@ -217,8 +227,8 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loadingLearningPaths ? (
               <div className="col-span-full flex flex-col items-center justify-center py-8 min-h-[200px]">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35] mb-2" />
-                <p className="text-gray-600">{t('loading_learning_paths')}</p>
+                <Loader />
+                <p className="text-gray-600 mt-4">{t('loading_learning_paths')}</p>
               </div>
             ) : learningPaths.length === 0 ? (
               <div className="col-span-full text-center py-8 text-gray-600">

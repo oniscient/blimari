@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { ContentViewer } from '@/src/components/ContentViewer';
 import { toast } from 'sonner';
 import { audioService } from '@/src/services/audio.service';
+import { useTranslation } from 'react-i18next';
 
 interface ContentPageProps {
   params: {
@@ -18,6 +19,7 @@ interface ContentPageProps {
 }
 
 const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
+  const { t } = useTranslation();
   const { id: learningPathId, contentId } = params;
   const router = useRouter();
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
@@ -102,7 +104,7 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-[#FF6B35] mx-auto" />
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2 mt-8">Carregando conteúdo...</h2>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2 mt-8">{t('loading_content')}</h2>
         </div>
       </div>
     );
@@ -112,10 +114,10 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2">Ops! Algo deu errado</h2>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2">{t('oops_something_went_wrong')}</h2>
           <p className="text-[#718096] mb-6">{error}</p>
           <Button asChild className="bg-[#FF6B35] hover:bg-[#E55A2B]">
-            <Link href={`/learning-paths/${learningPathId}`}>Voltar para a Trilha</Link>
+            <Link href={`/learning-paths/${learningPathId}`}>{t('back_to_trail')}</Link>
           </Button>
         </div>
       </div>
@@ -126,9 +128,9 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-xl font-medium text-[#2D3748] mb-2">Conteúdo não encontrado</h2>
+          <h2 className="text-xl font-medium text-[#2D3748] mb-2">{t('content_not_found')}</h2>
           <Button asChild className="bg-[#FF6B35] hover:bg-[#E55A2B]">
-            <Link href={`/learning-paths/${learningPathId}`}>Voltar para a Trilha</Link>
+            <Link href={`/learning-paths/${learningPathId}`}>{t('back_to_trail')}</Link>
           </Button>
         </div>
       </div>
@@ -143,7 +145,7 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
             <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 px-2">
               <Link href={`/learning-paths/${learningPathId}`} className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Voltar para a Trilha</span>
+                <span className="hidden sm:inline">{t('back_to_trail')}</span>
               </Link>
             </Button>
             <h1 className="text-lg font-semibold text-gray-800 truncate max-w-[calc(100vw-200px)] sm:max-w-md lg:max-w-xl">
@@ -159,7 +161,7 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
               className="rounded-full px-3"
             >
               <ArrowLeft className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Anterior</span>
+              <span className="hidden sm:inline">{t('previous')}</span>
             </Button>
             <Button
               onClick={() => handleProgressChange(!contentItem.isCompleted)}
@@ -170,7 +172,7 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
             >
               <CheckCircle className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">
-                {contentItem.isCompleted ? 'Incompleto' : 'Concluído'}
+                {contentItem.isCompleted ? t('incomplete') : t('completed')}
               </span>
             </Button>
             <Button
@@ -180,7 +182,7 @@ const ContentPage: React.FC<ContentPageProps> = ({ params }) => {
               size="sm"
               className="rounded-full px-3"
             >
-              <span className="hidden sm:inline">Próximo</span>
+              <span className="hidden sm:inline">{t('next')}</span>
               <ArrowRight className="w-4 h-4 sm:ml-2" />
             </Button>
           </div>
